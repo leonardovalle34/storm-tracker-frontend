@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { fetchForecast, fetchMarine } from '@/services/api'
 import type { ForecastResponse, MarineResponse } from '@/types/weather'
+import { trimEmptyTrailingDays } from '@/utils/forecast'
 import { hasWaveData } from '@/utils/hourly'
 import { useSelectedLocation } from './useSelectedLocation'
 
@@ -24,7 +25,7 @@ export function useWeather() {
       fetchMarine(loc.latitude, loc.longitude),
     ])
     if (current !== token) return
-    forecast.value = f.status === 'fulfilled' ? f.value : null
+    forecast.value = f.status === 'fulfilled' ? trimEmptyTrailingDays(f.value) : null
     marine.value = m.status === 'fulfilled' ? m.value : null
     error.value = f.status === 'rejected' ? String(f.reason?.message ?? f.reason) : null
     loading.value = false

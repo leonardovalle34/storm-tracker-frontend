@@ -72,6 +72,19 @@ describe('useWeather', () => {
     expect(w.isCoastal.value).toBe(false)
   })
 
+  it('drops a trailing day the model has no data for', async () => {
+    forecast.mockResolvedValue({
+      daily: { time: ['2026-09-19', '2026-09-20'], temperature_2m_max: [25, null] },
+      hourly: { time: ['2026-09-19T00:00', '2026-09-20T00:00'] },
+    } as never)
+    marine.mockResolvedValue(coastal)
+    const w = setup()
+    useSelectedLocation().selectCoords(1, 1)
+    await settle()
+    expect(w.forecast.value?.daily.time).toEqual(['2026-09-19'])
+    expect(w.forecast.value?.hourly.time).toEqual(['2026-09-19T00:00'])
+  })
+
   it('reports an error when the forecast fails', async () => {
     forecast.mockRejectedValue(new Error('boom'))
     marine.mockResolvedValue(inland)
