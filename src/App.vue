@@ -1,22 +1,25 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import AppFooter from '@/components/AppFooter.vue'
-import AppHeader from '@/components/AppHeader.vue'
-import ForecastCards from '@/components/ForecastCards.vue'
-import LocationPicker from '@/components/LocationPicker.vue'
-import ModelMaps from '@/components/ModelMaps.vue'
-import OceanGrid from '@/components/OceanGrid.vue'
-import WindGrid from '@/components/WindGrid.vue'
-import { requestInitialLocation } from '@/composables/useGeolocation'
-import { useSelectedLocation } from '@/composables/useSelectedLocation'
-import { useWeather } from '@/composables/useWeather'
+import AppFooter from '@/components/AppFooter/AppFooter.vue'
+import AppHeader from '@/components/AppHeader/AppHeader.vue'
+import ForecastCards from '@/components/ForecastCards/ForecastCards.vue'
+import LocationPicker from '@/components/LocationPicker/LocationPicker.vue'
+import ModelMaps from '@/components/ModelMaps/ModelMaps.vue'
+import OceanGrid from '@/components/OceanGrid/OceanGrid.vue'
+import WindGrid from '@/components/WindGrid/WindGrid.vue'
+import { useLocationStore } from '@/stores/location'
+import { useWeatherStore } from '@/stores/weather'
 
 const { t } = useI18n()
-const { location } = useSelectedLocation()
-const { forecast, marine, loading, error, isCoastal } = useWeather()
+const locationStore = useLocationStore()
+const weatherStore = useWeatherStore()
+const { location } = storeToRefs(locationStore)
+const { forecast, marine, loading, error, isCoastal } = storeToRefs(weatherStore)
 
-onMounted(() => void requestInitialLocation())
+watch(location, () => void weatherStore.load(), { immediate: true })
+onMounted(() => void locationStore.detectLocation())
 
 // Windy needs a centre even before the user picks something (Santos, SP).
 const DEFAULT_CENTER = { latitude: -23.96, longitude: -46.33 }
@@ -36,7 +39,13 @@ const mapsCenter = computed(() => location.value ?? DEFAULT_CENTER)
       </p>
 
       <template v-if="location && !loading && forecast">
-        <section data-section="forecast"><ForecastCards :daily="forecast.daily" /></section>
+        <section data-section="forecast">
+          <ForecastCards
+            :daily="forecast.daily"
+            :hourly="forecast.hourly"
+            :marine="isCoastal ? marine?.hourly : null"
+          />
+        </section>
         <section data-section="wind"><WindGrid :hourly="forecast.hourly" /></section>
         <section v-if="isCoastal && marine" data-section="ocean">
           <OceanGrid :hourly="marine.hourly" :forecast="forecast" />
