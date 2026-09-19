@@ -80,8 +80,8 @@ export default {
   },
   models: {
     title: 'Model maps',
-    rain: 'Rain',
-    snow: 'Snow',
+    rain: 'Precipitation',
+    wind: 'Wind',
     temp: 'Temperature',
     waves: 'Waves',
     sst: 'Water temperature',

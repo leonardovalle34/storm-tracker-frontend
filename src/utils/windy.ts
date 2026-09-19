@@ -1,4 +1,4 @@
-export type WindyOverlay = 'rain' | 'snow' | 'temp' | 'waves' | 'sst'
+export type WindyOverlay = 'rain' | 'wind' | 'temp' | 'waves' | 'sst'
 
 /** Windy embed2.html. `expanded` = modal version: closer zoom and the Windy menu visible. */
 export function windyUrl(

@@ -84,8 +84,8 @@ export default {
   },
   models: {
     title: 'Mapas de modelo',
-    rain: 'Lluvia',
-    snow: 'Nieve',
+    rain: 'Precipitación',
+    wind: 'Viento',
     temp: 'Temperatura',
     waves: 'Olas',
     sst: 'Temperatura del agua',

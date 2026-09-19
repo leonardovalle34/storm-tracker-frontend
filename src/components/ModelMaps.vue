@@ -7,7 +7,7 @@ import { windyUrl, type WindyOverlay } from '@/utils/windy'
 const props = defineProps<{ location: Pick<Location, 'latitude' | 'longitude'>; coastal: boolean }>()
 const { t } = useI18n()
 
-const ALWAYS: WindyOverlay[] = ['rain', 'snow', 'temp']
+const ALWAYS: WindyOverlay[] = ['rain', 'wind', 'temp']
 const COASTAL: WindyOverlay[] = ['waves', 'sst']
 const overlays = computed(() => (props.coastal ? [...ALWAYS, ...COASTAL] : ALWAYS))
 

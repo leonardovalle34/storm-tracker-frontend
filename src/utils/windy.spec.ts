@@ -13,7 +13,7 @@ describe('windyUrl', () => {
     expect(u.searchParams.get('menu')).toBe('')
   })
 
-  it.each(['rain', 'snow', 'temp', 'waves', 'sst'] as const)('supports overlay %s', (o) => {
+  it.each(['rain', 'wind', 'temp', 'waves', 'sst'] as const)('supports overlay %s', (o) => {
     expect(new URL(windyUrl(loc, o)).searchParams.get('overlay')).toBe(o)
   })
 

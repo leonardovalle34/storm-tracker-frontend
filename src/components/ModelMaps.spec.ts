@@ -19,12 +19,21 @@ const overlays = (w: ReturnType<typeof mk>) =>
 describe('ModelMaps', () => {
   setLocale('pt')
 
-  it('always shows rain, snow and temp', () => {
-    expect(overlays(mk(false))).toEqual(['rain', 'snow', 'temp'])
+  it('always shows precipitation (rain overlay), wind and temperature, in that order', () => {
+    expect(overlays(mk(false))).toEqual(['rain', 'wind', 'temp'])
+  })
+
+  it('has one combined "Precipitação" tile and no separate rain/snow tiles', () => {
+    const titles = mk(false)
+      .findAll('figcaption')
+      .map((f) => f.text())
+    expect(titles).toEqual(['Precipitação', 'Vento', 'Temperatura'])
+    expect(titles).not.toContain('Chuva')
+    expect(titles).not.toContain('Neve')
   })
 
   it('adds waves and sst only for coastal locations', () => {
-    expect(overlays(mk(true))).toEqual(['rain', 'snow', 'temp', 'waves', 'sst'])
+    expect(overlays(mk(true))).toEqual(['rain', 'wind', 'temp', 'waves', 'sst'])
   })
 
   it('embeds Windy embed2.html', () => {
@@ -41,7 +50,7 @@ describe('ModelMaps', () => {
     await w.findAll('[data-testid="model-open"]')[1].trigger('click')
     expect(dialog.attributes('open')).toBeDefined()
     const src = new URL(w.get('[data-testid="modal-frame"]').attributes('src')!)
-    expect(src.searchParams.get('overlay')).toBe('snow')
+    expect(src.searchParams.get('overlay')).toBe('wind')
     expect(src.searchParams.get('menu')).toBe('true')
     expect(Number(src.searchParams.get('zoom'))).toBeGreaterThan(5)
     w.unmount()
