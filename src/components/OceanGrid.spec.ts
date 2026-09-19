@@ -32,8 +32,8 @@ describe('OceanGrid', () => {
     expect(w.findAll('[data-testid="hour-head"]')).toHaveLength(14)
   })
 
-  it('has the scroll sync toggle in its header', () => {
-    expect(w.find('button[role="switch"]').exists()).toBe(true)
+  it('does not carry its own scroll sync toggle (there is a single one, in the forecast header)', () => {
+    expect(w.find('button[role="switch"]').exists()).toBe(false)
   })
 
   it('has a stronger divider between days', () => {

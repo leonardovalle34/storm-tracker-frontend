@@ -19,8 +19,8 @@ describe('WindGrid', () => {
     return w
   }
 
-  it('has the scroll sync toggle in its header', async () => {
-    expect((await mk()).find('button[role="switch"]').exists()).toBe(true)
+  it('does not carry its own scroll sync toggle (there is a single one, in the forecast header)', async () => {
+    expect((await mk()).find('button[role="switch"]').exists()).toBe(false)
   })
 
   it('is ONE continuous table with the days side by side, scrolling horizontally as a whole', async () => {

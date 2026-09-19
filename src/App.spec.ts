@@ -65,6 +65,16 @@ describe('App', () => {
     Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined })
   })
 
+  it('has exactly one scroll sync toggle (in the forecast header, above the synced boards)', async () => {
+    vi.mocked(api.fetchMarine).mockResolvedValue(makeMarine(true))
+    const w = mk()
+    useSelectedLocation().selectCoords(-23.9, -46.3)
+    await flushPromises()
+    const sync = w.findAll('button[role="switch"]').filter((b) => b.text().includes('Sincronizar rolagem'))
+    expect(sync).toHaveLength(1)
+    expect(w.get('[data-section="forecast"]').text()).toContain('Sincronizar rolagem')
+  })
+
   it('starts empty, without errors, when there is no geolocation', async () => {
     const w = mk()
     await flushPromises()
