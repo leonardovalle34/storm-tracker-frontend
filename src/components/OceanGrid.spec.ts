@@ -150,7 +150,7 @@ describe('OceanGrid', () => {
     })
   })
 
-  describe('day summary rows: UV, water clarity and recommended activities', () => {
+  describe('day summary rows below the data: water clarity and recommended activities', () => {
     const days = dayList(3)
     const mkSummary = (opts: { forecast?: boolean; nullFromDay?: number } = {}) => {
       const h = makeMarine(true, days).hourly
@@ -197,32 +197,48 @@ describe('OceanGrid', () => {
       }
     })
 
-    it('has a UV row with the daily index and a water clarity row (estimate), per day', async () => {
+    it('does not repeat the UV index in the ocean section (it lives in the 16-day cards)', async () => {
       const g = mkSummary()
       await flushPromises()
-      const uv = g.findAll('[data-testid="uv-cell"]')
-      expect(uv).toHaveLength(3)
-      expect(uv.map((c) => c.text().match(/\d+/)?.[0])).toEqual(['3', '8', '11'])
-      expect(g.get('[data-testid="uv-row"] th').text()).toContain('Índice UV')
-      const clarity = g.findAll('[data-testid="clarity-cell"]')
-      expect(clarity).toHaveLength(3)
+      expect(g.find('[data-testid="uv-row"]').exists()).toBe(false)
+      expect(g.find('[data-testid="uv-cell"]').exists()).toBe(false)
+      expect(g.text()).not.toContain('Índice UV')
+    })
+
+    it('has a water clarity row (estimate) per day', async () => {
+      const g = mkSummary()
+      await flushPromises()
+      expect(g.findAll('[data-testid="clarity-cell"]')).toHaveLength(3)
       expect(g.get('[data-testid="clarity-row"] th').text()).toContain('Claridade da água')
       expect(g.get('[data-testid="clarity-row"]').html()).toContain('Estimativa')
     })
 
-    it('shows a dash instead of activities/clarity for days without marine data, keeping UV', () => {
+    it('places clarity and activities BELOW the data rows (after Water temp), not above the grid', async () => {
+      const g = mkSummary()
+      await flushPromises()
+      const after = (a: Element, b: Element) =>
+        !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+      const lastData = g.findAll('[data-testid="temp-cell"]').at(-1)!.element
+      const firstHour = g.get('[data-testid="hour-head"]').element
+      const clarity = g.get('[data-testid="clarity-row"]').element
+      const surf = g.get('[data-testid="activity-row"]').element
+      expect(after(lastData, clarity)).toBe(true)
+      expect(after(clarity, surf)).toBe(true)
+      expect(after(surf, firstHour)).toBe(false) // never above the hour header
+      expect(after(g.get('[data-testid="tide-chart"]').element, clarity)).toBe(true)
+    })
+
+    it('shows a dash instead of activities/clarity for days without marine data', () => {
       const g = mkSummary({ nullFromDay: 1 })
       const rows = g.findAll('[data-testid="activity-row"]')
       expect(rows[0].findAll('[data-testid="activity-cell"]')[2].text()).toBe('–')
       expect(g.findAll('[data-testid="clarity-cell"]')[2].text()).toBe('–')
-      expect(g.findAll('[data-testid="uv-cell"]')[2].text()).toContain('11')
     })
 
-    it('has no activity or clarity rows without forecast data (UV needs the forecast too)', () => {
+    it('has no activity or clarity rows without forecast data', () => {
       const g = mkSummary({ forecast: false })
       expect(g.find('[data-testid="activity-row"]').exists()).toBe(false)
       expect(g.find('[data-testid="clarity-row"]').exists()).toBe(false)
-      expect(g.find('[data-testid="uv-row"]').exists()).toBe(false)
     })
   })
 })
