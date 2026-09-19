@@ -12,14 +12,18 @@ const h = vi.hoisted(() => {
   map.invalidateSize = vi.fn()
   map.panTo = vi.fn(() => map)
   const marker = { addTo: vi.fn(() => marker), setLatLng: vi.fn(() => marker) }
-  const tile = { addTo: vi.fn() }
-  return { handlers, map, marker, tile }
+  const tiles: { addTo: ReturnType<typeof vi.fn> }[] = []
+  return { handlers, map, marker, tiles }
 })
 
 vi.mock('leaflet', () => {
   const L = {
     map: vi.fn(() => h.map),
-    tileLayer: vi.fn(() => h.tile),
+    tileLayer: vi.fn(() => {
+      const layer = { addTo: vi.fn() }
+      h.tiles.push(layer)
+      return layer
+    }),
     marker: vi.fn(() => h.marker),
     divIcon: vi.fn(() => ({})),
   }
@@ -36,6 +40,7 @@ describe('LocationMap', () => {
   beforeEach(() => {
     _resetSelectedLocation()
     vi.clearAllMocks()
+    h.tiles.length = 0
   })
 
   it('renders an Esri World Imagery satellite layer', () => {
@@ -43,7 +48,25 @@ describe('LocationMap', () => {
     expect(L.map).toHaveBeenCalled()
     const [url] = vi.mocked(L.tileLayer).mock.calls[0]
     expect(url).toContain('server.arcgisonline.com/ArcGIS/rest/services/World_Imagery')
-    expect(h.tile.addTo).toHaveBeenCalledWith(h.map)
+    expect(h.tiles[0].addTo).toHaveBeenCalledWith(h.map)
+  })
+
+  it('stacks a labels layer (boundaries and places) right after the satellite one, on the same map', () => {
+    mk()
+    const calls = vi.mocked(L.tileLayer).mock.calls
+    expect(calls).toHaveLength(2)
+    expect(calls[0][0]).toContain('World_Imagery')
+    expect(calls[1][0]).toBe(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    )
+    expect(calls[1][1]).toMatchObject({ attribution: 'Esri' })
+    // both always on the same instance (no toggle / layer control), imagery added first so labels draw on top
+    expect(h.tiles[0].addTo).toHaveBeenCalledWith(h.map)
+    expect(h.tiles[1].addTo).toHaveBeenCalledWith(h.map)
+    expect(h.tiles[0].addTo.mock.invocationCallOrder[0]).toBeLessThan(
+      h.tiles[1].addTo.mock.invocationCallOrder[0],
+    )
+    expect(L.map).toHaveBeenCalledTimes(1)
   })
 
   it('a map click feeds the shared selected location', () => {

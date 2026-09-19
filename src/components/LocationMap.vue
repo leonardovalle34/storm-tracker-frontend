@@ -14,6 +14,9 @@ let marker: L.Marker | undefined
 let fromMapClick = false
 
 const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+// Transparent overlay with boundaries and place names, drawn above the imagery (hybrid look)
+const ESRI_LABELS =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'
 
 function placeMarker(lat: number, lon: number) {
   if (!map) return
@@ -36,6 +39,7 @@ onMounted(() => {
     attribution:
       'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
   }).addTo(map)
+  L.tileLayer(ESRI_LABELS, { attribution: 'Esri' }).addTo(map) // added after the imagery, so it renders on top
   map.on('click', (e: L.LeafletMouseEvent) => {
     fromMapClick = true
     selectCoords(e.latlng.lat, e.latlng.lng)

@@ -16,6 +16,9 @@ export default {
   },
   footer: { madeBy: 'Feito por', company: 'Nexus Tecnologia' },
   map: {
+    none: 'Nenhum local selecionado',
+    choose: 'Escolher local',
+    minimize: 'Minimizar mapa',
     change: 'Alterar local',
     current: 'Local selecionado',
     title: 'Escolha um local',

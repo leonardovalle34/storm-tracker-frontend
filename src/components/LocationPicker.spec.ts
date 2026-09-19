@@ -32,6 +32,28 @@ describe('LocationPicker', () => {
     expect(w.get('[data-testid="location-strip"]').attributes('inert')).toBeDefined()
   })
 
+  it('has a discreet minimize button at the top-right of the open map, which collapses it', async () => {
+    const w = mk()
+    const btn = w.get('[data-testid="minimize-map"]')
+    expect(btn.attributes('aria-label')).toBe('Minimizar mapa')
+    expect(btn.attributes('title')).toBe('Minimizar mapa')
+    expect(btn.classes()).toEqual(expect.arrayContaining(['absolute', 'right-2', 'top-2', 'h-7', 'w-7']))
+    expect(btn.find('svg').exists()).toBe(true)
+    await btn.trigger('click')
+    expect(state(w)).toBe('collapsed')
+    expect(w.get('[data-testid="map-region"]').attributes('inert')).toBeDefined() // unreachable while collapsed
+  })
+
+  it('minimizing before choosing a place shows a neutral strip that reopens the map', async () => {
+    const w = mk()
+    await w.get('[data-testid="minimize-map"]').trigger('click')
+    const strip = w.get('[data-testid="location-strip"]')
+    expect(strip.text()).toContain('Nenhum local selecionado')
+    expect(strip.get('button').text()).toBe('Escolher local')
+    await strip.get('button').trigger('click')
+    expect(state(w)).toBe('expanded')
+  })
+
   it('collapses to a 40px strip with pin + name + "Alterar local" once a location is selected', async () => {
     const w = mk()
     useSelectedLocation().select({ name: 'Santos, SP', latitude: -23.9, longitude: -46.3 })

@@ -21,6 +21,10 @@ const label = computed(() => {
   return l.name || `${l.latitude.toFixed(4)}, ${l.longitude.toFixed(4)}`
 })
 
+function minimize() {
+  expanded.value = false
+}
+
 function change() {
   expanded.value = true
   mapRef.value?.refresh?.()
@@ -60,16 +64,21 @@ const WRAP = 'grid transition-[grid-template-rows] duration-300 ease-in-out moti
               d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"
             />
           </svg>
-          <span class="min-w-0 truncate font-medium" :title="label" :aria-label="t('map.current')">{{
-            label
-          }}</span>
+          <span
+            v-if="location"
+            class="min-w-0 truncate font-medium"
+            :title="label"
+            :aria-label="t('map.current')"
+            >{{ label }}</span
+          >
+          <span v-else class="min-w-0 truncate text-muted">{{ t('map.none') }}</span>
           <button
             type="button"
             class="ml-auto shrink-0 rounded px-2 py-1 font-medium text-accent underline underline-offset-2 hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent"
             :aria-expanded="!expanded"
             @click="change"
           >
-            {{ t('map.change') }}
+            {{ location ? t('map.change') : t('map.choose') }}
           </button>
         </div>
       </div>
@@ -87,7 +96,32 @@ const WRAP = 'grid transition-[grid-template-rows] duration-300 ease-in-out moti
         :aria-hidden="!expanded ? 'true' : undefined"
       >
         <h2 class="mb-3 text-xl font-semibold">{{ t('map.title') }}</h2>
-        <LocationMap ref="mapRef" />
+        <div class="relative">
+          <LocationMap ref="mapRef" />
+          <button
+            type="button"
+            data-testid="minimize-map"
+            :aria-label="t('map.minimize')"
+            :title="t('map.minimize')"
+            class="absolute right-2 top-2 z-[1000] flex h-7 w-7 items-center justify-center rounded-md border border-line bg-surface/80 text-ink opacity-80 shadow-sm backdrop-blur hover:bg-surface hover:opacity-100 focus-visible:outline-2 focus-visible:outline-accent"
+            @click="minimize"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 15 6-6 6 6" />
+              <path d="m6 20 6-6 6 6" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
