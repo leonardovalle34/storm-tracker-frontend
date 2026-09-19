@@ -50,6 +50,13 @@ describe('OceanGrid', () => {
     expect(rowOrder.map((r) => trs.indexOf(r as HTMLTableRowElement))).toEqual([0, 1, 2, 3, 4])
   })
 
+  it('shows the swell height values in bold (and only that row)', () => {
+    expect(w.findAll('[data-testid="swell-cell"]').every((c) => c.classes().includes('font-bold'))).toBe(true)
+    for (const id of ['period', 'tide', 'temp']) {
+      expect(w.get(`[data-testid="${id}-cell"]`).classes()).not.toContain('font-bold')
+    }
+  })
+
   it('renders the values of each row', () => {
     expect(w.findAll('[data-testid="swell-cell"]')[1].text()).toBe('1.5')
     expect(w.findAll('[data-testid="period-cell"]')[0].text()).toBe('12.3')

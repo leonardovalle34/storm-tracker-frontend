@@ -31,10 +31,11 @@ interface Row {
   id: string
   label: string
   value: (c: Col) => number | null
+  bold?: boolean
   fmt?: (v: number) => string // absent => direction cell (arrow + cardinal)
 }
 const rows: Row[] = [
-  { id: 'swell', label: 'ocean.swell', value: (c) => c.swell, fmt: fixed(1) },
+  { id: 'swell', label: 'ocean.swell', value: (c) => c.swell, fmt: fixed(1), bold: true },
   { id: 'period', label: 'ocean.period', value: (c) => c.period, fmt: fixed(1) },
   { id: 'swelldir', label: 'ocean.swellDir', value: (c) => c.swellDir },
   { id: 'tide', label: 'ocean.tide', value: (c) => c.tide, fmt: tideFmt },
@@ -96,7 +97,7 @@ const label =
               :data-testid="`${r.id}-cell`"
               :title="r.value(c) === null ? t('ocean.noDataCell') : undefined"
               class="bg-surface-2 text-ink"
-              :class="[CELL, !r.fmt && 'h-auto py-1', c.first && DAY_START]"
+              :class="[CELL, !r.fmt && 'h-auto py-1', r.bold && 'font-bold', c.first && DAY_START]"
             >
               <WindDirection v-if="!r.fmt" :direction="r.value(c)" />
               <template v-else>{{ r.value(c) === null ? '–' : r.fmt(r.value(c)!) }}</template>
