@@ -36,6 +36,15 @@ describe('ModelMaps', () => {
     expect(overlays(mk(true))).toEqual(['rain', 'wind', 'temp', 'waves', 'sst'])
   })
 
+  it('centers incomplete last rows (e.g. the two coastal tiles under three)', () => {
+    const grid = mk(true).get('[data-testid="model-grid"]')
+    expect(grid.classes()).toEqual(expect.arrayContaining(['flex', 'flex-wrap', 'justify-center']))
+    const tiles = mk(true).findAll('figure')
+    expect(tiles).toHaveLength(5)
+    // fixed column widths (not grid tracks), so a short last row is centered instead of left-aligned
+    expect(tiles.every((t) => t.classes().some((c) => c.startsWith('lg:w-[calc(33.333%')))).toBe(true)
+  })
+
   it('embeds Windy embed2.html', () => {
     const src = mk(false).get('[data-testid="model-frame"]').attributes('src')!
     expect(src).toContain('https://embed.windy.com/embed2.html')

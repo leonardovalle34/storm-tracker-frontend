@@ -29,8 +29,12 @@ function onBackdrop(e: MouseEvent) {
 <template>
   <div>
     <h2 class="mb-3 text-xl font-semibold">{{ t('models.title') }}</h2>
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <figure v-for="o in overlays" :key="o" class="overflow-hidden rounded-lg border border-line bg-surface">
+    <div data-testid="model-grid" class="flex flex-wrap justify-center gap-4">
+      <figure
+        v-for="o in overlays"
+        :key="o"
+        class="w-full overflow-hidden rounded-lg border border-line bg-surface sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.667rem)]"
+      >
         <figcaption class="px-3 py-2 font-medium">{{ t(`models.${o}`) }}</figcaption>
         <div class="relative h-64">
           <iframe
