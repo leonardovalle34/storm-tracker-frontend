@@ -47,9 +47,14 @@ export default {
   alerts: {
     banner: 'Heads-up for the next {days} days',
     bannerNote: 'Forecast-model estimate, not an official alert.',
-    category: { snow: 'Snow', rain: 'Rain', wind: 'Wind', storm: 'Storm', sea: 'Sea' },
+    category: { snow: 'Snow', heat: 'Heat', rain: 'Rain', wind: 'Wind', storm: 'Storm', sea: 'Sea' },
     severity: { moderate: 'moderate', high: 'high', severe: 'severe' },
     text: {
+      heat: {
+        moderate: 'Feels-like temperature of {a} to {b} expected (hot).',
+        high: 'Feels-like temperature of {b} to {c} expected (very hot).',
+        severe: 'Feels-like temperature above {c} expected (extreme heat, health risk).',
+      },
       snow: {
         moderate: 'Significant snow expected (5 mm water equivalent or more for the day).',
         high: 'Heavy snow expected (15 mm water equivalent or more for the day).',

@@ -1,6 +1,6 @@
 # Storm Tracker — frontend
 
-A web app that shows the weather and sea forecast for any point on the planet: a 16-day forecast, wind, swell, tides, moon phases, recommended activities (surf, kite, swimming, diving) and alerts for rain, snow, wind, storms and sea conditions.
+A web app that shows the weather and sea forecast for any point on the planet: a 16-day forecast, wind, swell, tides, moon phases, recommended activities (surf, kite, swimming, diving) and alerts for rain, snow, heat, wind, storms and sea conditions.
 
 The frontend has no user accounts and no database of its own: preferences (theme, language, temperature unit, favorites, history) live in the browser's `localStorage`. Data comes from the backend (`storm-tracker-backend`), which queries Open-Meteo and Nominatim.
 
@@ -31,7 +31,7 @@ The frontend has no user accounts and no database of its own: preferences (theme
 - **Wind grid** and **ocean grid** (swell, period, direction, tide with chart, water temperature, water visibility and recommended activities), with optional synchronized scrolling across forecast, wind and ocean.
 - **Moon phase** for each day.
 - **Model maps** (Windy): rain, wind and temperature always; waves and water temperature at coastal locations.
-- **Alerts** for rain, snow, wind, storms and sea, with a banner for the next 3 days.
+- **Alerts** for rain, snow, heat, wind, storms and sea, with a banner for the next 3 days.
 - **Theme** (light/dark), **language** (pt, en, es, fr, de) and **temperature unit** (°C/°F).
 
 ## Tech stack
@@ -230,13 +230,14 @@ If `localStorage` is unavailable (private window, blocked storage), the app keep
 
 These are **estimates from a forecast model, not official alerts**. Every icon has a tooltip saying so and recommending confirmation with the local civil defense (land) or the harbor master/Navy (sea). The functions live in `src/utils/alerts.ts`.
 
-| Category | Moderate   | High                           | Severe                         | Based on                                              |
-| -------- | ---------- | ------------------------------ | ------------------------------ | ----------------------------------------------------- |
-| Rain     | ≥ 20 mm    | ≥ 50 mm                        | ≥ 100 mm                       | daily precipitation                                   |
-| Snow     | ≥ 5 mm     | ≥ 15 mm                        | ≥ 30 mm                        | daily precipitation (water equivalent), on a snow day |
-| Wind     | 40–60 km/h | 60–100 km/h                    | > 100 km/h                     | strongest hourly wind of the day (knots → km/h)       |
-| Storm    | code 95    | —                              | code 96 or 99                  | daily `weather_code`                                  |
-| Sea      | wave ≥ 2 m | wave ≥ 2.5 m or wind ≥ 50 km/h | wave ≥ 3.5 m or wind ≥ 60 km/h | only where ocean data exists                          |
+| Category | Moderate   | High                           | Severe                         | Based on                                                                              |
+| -------- | ---------- | ------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------- |
+| Rain     | ≥ 20 mm    | ≥ 50 mm                        | ≥ 100 mm                       | daily precipitation                                                                   |
+| Snow     | ≥ 5 mm     | ≥ 15 mm                        | ≥ 30 mm                        | daily precipitation (water equivalent), on a snow day                                 |
+| Heat     | 33–38 °C   | 38–44 °C                       | > 44 °C                        | daily max apparent temperature (`apparent_temperature_max`; the backend must send it) |
+| Wind     | 40–60 km/h | 60–100 km/h                    | > 100 km/h                     | strongest hourly wind of the day (knots → km/h)                                       |
+| Storm    | code 95    | —                              | code 96 or 99                  | daily `weather_code`                                                                  |
+| Sea      | wave ≥ 2 m | wave ≥ 2.5 m or wind ≥ 50 km/h | wave ≥ 3.5 m or wind ≥ 60 km/h | only where ocean data exists                                                          |
 
 - Colors: yellow (moderate), orange (high), red (severe). Days with no alert show nothing.
 - A day with a snow code, or with a thunderstorm code and a maximum temperature ≤ 0 °C, is treated as **snow** (not rain or storm).

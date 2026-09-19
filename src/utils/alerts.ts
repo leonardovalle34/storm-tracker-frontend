@@ -4,7 +4,7 @@ import { describeWeather } from './weatherCode'
 
 export type Severity = 'none' | 'moderate' | 'high' | 'severe'
 export type ActiveSeverity = Exclude<Severity, 'none'>
-export type AlertCategory = 'rain' | 'snow' | 'wind' | 'storm' | 'sea'
+export type AlertCategory = 'rain' | 'snow' | 'heat' | 'wind' | 'storm' | 'sea'
 export interface Alert {
   category: AlertCategory
   severity: ActiveSeverity
@@ -40,6 +40,15 @@ export function classifySnowSeverity(precipitationMm?: number | null): Severity 
   if (precipitationMm >= 30) return 'severe'
   if (precipitationMm >= 15) return 'high'
   if (precipitationMm >= 5) return 'moderate'
+  return 'none'
+}
+
+/** Daily max apparent ("feels like") temperature in °C: moderate 33-38, high 38-44, severe above 44. */
+export function classifyHeatSeverity(apparentTemperatureMax?: number | null): Severity {
+  if (apparentTemperatureMax == null) return 'none'
+  if (apparentTemperatureMax > 44) return 'severe'
+  if (apparentTemperatureMax >= 38) return 'high'
+  if (apparentTemperatureMax >= 33) return 'moderate'
   return 'none'
 }
 
@@ -104,6 +113,7 @@ export function buildDayAlerts({ daily, hourly, marine }: BuildInput): DayAlerts
       snowDay
         ? ['snow', classifySnowSeverity(daily.precipitation_sum[i])]
         : ['rain', classifyRainSeverity(daily.precipitation_sum[i])],
+      ['heat', classifyHeatSeverity(daily.apparent_temperature_max?.[i])],
       ['wind', classifyWindSeverity(windKmh)],
       ['storm', snowDay ? 'none' : classifyStormSeverity(code)],
     ]
@@ -138,6 +148,6 @@ export function upcomingWarnings(days: DayAlerts[], window = WARNING_DAYS): Warn
       }
     }
   }
-  const order: AlertCategory[] = ['rain', 'snow', 'wind', 'storm', 'sea']
+  const order: AlertCategory[] = ['rain', 'snow', 'heat', 'wind', 'storm', 'sea']
   return order.flatMap((category) => (found.has(category) ? [found.get(category)!] : []))
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { DailyForecast } from '@/types/weather'
 import {
   buildDayAlerts,
+  classifyHeatSeverity,
   classifyRainSeverity,
   classifySnowSeverity,
   classifySeaSeverity,
@@ -54,6 +56,27 @@ describe('classifySnowSeverity (daily precipitation as water equivalent, mm)', (
 
   it('treats a missing value as none', () => {
     expect(classifySnowSeverity(null)).toBe('none')
+  })
+})
+
+describe('classifyHeatSeverity (daily max apparent temperature, °C)', () => {
+  it.each([
+    [-5, 'none'],
+    [25, 'none'],
+    [32.9, 'none'],
+    [33, 'moderate'], // lower bound is inclusive
+    [37.9, 'moderate'],
+    [38, 'high'],
+    [44, 'high'], // 44 is still high: severe is strictly above
+    [44.1, 'severe'],
+    [52, 'severe'],
+  ] as const)('%s °C -> %s', (c, expected) => {
+    expect(classifyHeatSeverity(c)).toBe(expected)
+  })
+
+  it('treats a missing value as none', () => {
+    expect(classifyHeatSeverity(null)).toBe('none')
+    expect(classifyHeatSeverity(undefined)).toBe('none')
   })
 })
 
@@ -132,7 +155,7 @@ describe('classifySeaSeverity (wave height m, wind km/h)', () => {
 describe('buildDayAlerts', () => {
   const day = (date: string) =>
     Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`)
-  const daily = (over: Partial<Record<'precipitation_sum' | 'weather_code', number[]>> = {}) => ({
+  const daily = (over: Partial<DailyForecast> = {}): DailyForecast => ({
     time: ['2026-09-19', '2026-09-20'],
     temperature_2m_max: [30, 30],
     temperature_2m_min: [20, 20],
@@ -167,6 +190,26 @@ describe('buildDayAlerts', () => {
     const r = buildDayAlerts({ daily: daily({ precipitation_sum: [60, 0], weather_code: [0, 96] }) })
     expect(r[0].alerts).toEqual([{ category: 'rain', severity: 'high' }])
     expect(r[1].alerts).toEqual([{ category: 'storm', severity: 'severe' }])
+  })
+
+  it('classifies heat from the daily max apparent temperature', () => {
+    const d = daily()
+    d.apparent_temperature_max = [35, 46]
+    const r = buildDayAlerts({ daily: d })
+    expect(r[0].alerts).toEqual([{ category: 'heat', severity: 'moderate' }])
+    expect(r[1].alerts).toEqual([{ category: 'heat', severity: 'severe' }])
+  })
+
+  it('uses the apparent temperature, not the air temperature', () => {
+    const d = daily()
+    d.temperature_2m_max = [40, 40] // hot air...
+    d.apparent_temperature_max = [30, 30] // ...but it does not feel that hot
+    expect(buildDayAlerts({ daily: d }).flatMap((x) => x.alerts)).toEqual([])
+  })
+
+  it('has no heat alert when the backend does not send the field yet', () => {
+    const r = buildDayAlerts({ daily: daily() }) // no apparent_temperature_max
+    expect(r.flatMap((x) => x.alerts.map((a) => a.category))).not.toContain('heat')
   })
 
   it.each([71, 73, 75, 77, 85, 86])('a snow day (code %s) is a snow alert, never a rain alert', (code) => {
@@ -236,18 +279,23 @@ describe('buildDayAlerts', () => {
     ).toEqual(['wind'])
   })
 
-  it('keeps a stable category order: rain, wind, storm, sea (snow takes the place of rain)', () => {
+  it('keeps a stable category order: rain, heat, wind, storm, sea (snow takes the place of rain)', () => {
+    const dd = daily({ precipitation_sum: [120, 0], weather_code: [99, 0] })
+    dd.apparent_temperature_max = [45, 20]
     const r = buildDayAlerts({
-      daily: daily({ precipitation_sum: [120, 0], weather_code: [99, 0] }),
+      daily: dd,
       hourly: hourly([40, 5]),
       marine: marine([4, 0]),
     })
-    expect(r[0].alerts.map((a) => a.category)).toEqual(['rain', 'wind', 'storm', 'sea'])
+    expect(r[0].alerts.map((a) => a.category)).toEqual(['rain', 'heat', 'wind', 'storm', 'sea'])
   })
 })
 
 describe('upcomingWarnings (next 3 days, high or severe only)', () => {
-  type A = { category: 'rain' | 'snow' | 'wind' | 'storm' | 'sea'; severity: 'moderate' | 'high' | 'severe' }
+  type A = {
+    category: 'rain' | 'snow' | 'heat' | 'wind' | 'storm' | 'sea'
+    severity: 'moderate' | 'high' | 'severe'
+  }
   const d = (alerts: A[], date = 'x') => ({ date, alerts })
   const quiet = (n: number) => Array.from({ length: n }, () => d([]))
 
@@ -293,6 +341,11 @@ describe('upcomingWarnings (next 3 days, high or severe only)', () => {
       d([{ category: 'snow', severity: 'severe' }], '2026-09-26'),
     ]
     expect(upcomingWarnings(days)).toEqual([])
+  })
+
+  it('includes heat in the banner when it is high or severe', () => {
+    const r = upcomingWarnings([d([{ category: 'heat', severity: 'high' }], 'd1'), ...quiet(2)])
+    expect(r).toEqual([{ category: 'heat', severity: 'high', dates: ['d1'] }])
   })
 
   it('ignores days after the window', () => {

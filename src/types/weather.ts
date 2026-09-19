@@ -11,6 +11,8 @@ export interface DailyForecast {
   precipitation_sum: number[]
   weather_code: number[]
   uv_index_max?: number[]
+  /** "feels like" daily max in °C; optional until the backend sends it */
+  apparent_temperature_max?: (number | null)[]
   sunrise?: string[]
   sunset?: string[]
 }

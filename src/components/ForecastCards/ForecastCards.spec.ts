@@ -113,6 +113,13 @@ describe('ForecastCards', () => {
       expect(w.find('[data-category="rain"]').exists()).toBe(false)
     })
 
+    it('shows a heat alert from the feels-like temperature, and the banner when it is high', () => {
+      const w = mkAlerts({ apparent_temperature_max: [39, 30, 30, 30] })
+      const icon = w.findAll('[data-testid="day-card"]')[0].get('[data-category="heat"]')
+      expect(icon.attributes('data-severity')).toBe('high')
+      expect(w.get('[data-testid="banner-item"]').text()).toContain('Calor (alto)')
+    })
+
     it('shows several categories on one day', () => {
       const w = mkAlerts({ precipitation_sum: [60, 0, 0, 0], weather_code: [96, 0, 0, 0] })
       const icons = w.findAll('[data-testid="day-card"]')[0].findAll('[data-testid="alert-icon"]')

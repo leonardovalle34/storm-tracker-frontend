@@ -47,9 +47,14 @@ export default {
   alerts: {
     banner: 'Achtung in den nächsten {days} Tagen',
     bannerNote: 'Schätzung eines Vorhersagemodells, keine amtliche Warnung.',
-    category: { snow: 'Schnee', rain: 'Regen', wind: 'Wind', storm: 'Gewitter', sea: 'Meer' },
+    category: { snow: 'Schnee', heat: 'Hitze', rain: 'Regen', wind: 'Wind', storm: 'Gewitter', sea: 'Meer' },
     severity: { moderate: 'mäßig', high: 'hoch', severe: 'schwer' },
     text: {
+      heat: {
+        moderate: 'Gefühlte Temperatur von {a} bis {b} erwartet (heiß).',
+        high: 'Gefühlte Temperatur von {b} bis {c} erwartet (sehr heiß).',
+        severe: 'Gefühlte Temperatur über {c} erwartet (extreme Hitze, Gesundheitsrisiko).',
+      },
       snow: {
         moderate: 'Nennenswerter Schneefall erwartet (5 mm Wasseräquivalent oder mehr am Tag).',
         high: 'Starker Schneefall erwartet (15 mm Wasseräquivalent oder mehr am Tag).',

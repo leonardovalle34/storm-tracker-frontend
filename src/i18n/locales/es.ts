@@ -47,9 +47,14 @@ export default {
   alerts: {
     banner: 'Atención en los próximos {days} días',
     bannerNote: 'Estimación de modelo de pronóstico, no es una alerta oficial.',
-    category: { snow: 'Nieve', rain: 'Lluvia', wind: 'Viento', storm: 'Tormenta', sea: 'Mar' },
+    category: { snow: 'Nieve', heat: 'Calor', rain: 'Lluvia', wind: 'Viento', storm: 'Tormenta', sea: 'Mar' },
     severity: { moderate: 'moderado', high: 'alto', severe: 'severo' },
     text: {
+      heat: {
+        moderate: 'Sensación térmica de {a} a {b} prevista (calor).',
+        high: 'Sensación térmica de {b} a {c} prevista (calor intenso).',
+        severe: 'Sensación térmica superior a {c} prevista (calor extremo, riesgo para la salud).',
+      },
       snow: {
         moderate: 'Nevada significativa prevista (5 mm de agua equivalente o más en el día).',
         high: 'Nevada fuerte prevista (15 mm de agua equivalente o más en el día).',

@@ -21,7 +21,7 @@ Living reference for the **frontend**: requirements, technical decisions and bus
 
 ## Overview
 
-**What it is.** Storm Tracker is a single-page web app that shows the weather **and the sea** for any point on the planet. From one location it presents a 16-day forecast, hourly wind, swell and tide, moon phases, model maps, water visibility, rule-based activity recommendations (surf, kite/windsurf, swimming, diving) and safety-oriented alerts (rain, snow, wind, storm, sea).
+**What it is.** Storm Tracker is a single-page web app that shows the weather **and the sea** for any point on the planet. From one location it presents a 16-day forecast, hourly wind, swell and tide, moon phases, model maps, water visibility, rule-based activity recommendations (surf, kite/windsurf, swimming, diving) and safety-oriented alerts (rain, snow, heat, wind, storm, sea).
 
 **Value proposition.** Ocean-going and outdoor users usually juggle several sites (a forecast site, a wind map, a tide table, a wave model). Storm Tracker brings them into one page, aligned day by day, and turns raw numbers into a quick reading (colors, scores, alerts).
 
@@ -114,7 +114,7 @@ Base URL: environment variable **`VITE_API_BASE_URL`** (default `http://localhos
 
 **Forecast fields used** (Open-Meteo, requested with `wind_speed_unit=kn`, `timezone=auto`, 16 days, so wind is in **knots**, temperature in **°C**, precipitation in **mm**):
 
-- `daily`: `time`, `temperature_2m_max`, `temperature_2m_min`, `precipitation_sum`, `weather_code`, `uv_index_max`, `sunrise`, `sunset`
+- `daily`: `time`, `temperature_2m_max`, `temperature_2m_min`, `precipitation_sum`, `weather_code`, `uv_index_max`, `sunrise`, `sunset`, and `apparent_temperature_max` (optional: without it there is simply no heat alert; the backend does not request it yet, see findings)
 - `hourly`: `time`, `wind_speed_10m`, `wind_direction_10m`, `precipitation` (rain of the previous 24 h for water visibility). `temperature_2m` is requested by the backend but not used by the UI. `weather_code` per hour is **not** sent; the daily code is used instead.
 - `current` (optional): `temperature_2m`, `weather_code`, `wind_speed_10m` (knots, same request). If absent, the "Now" row is simply omitted.
 
@@ -245,20 +245,22 @@ Bands: `≥ 75` great, `≥ 55` good, `≥ 35` fair, otherwise poor.
 
 `utils/alerts.ts`. Severity is `none | moderate | high | severe`; the UI shows yellow, orange, red.
 
-| Category | Function                              | Moderate  | High                        | Severe                      | Input                                                                            |
-| -------- | ------------------------------------- | --------- | --------------------------- | --------------------------- | -------------------------------------------------------------------------------- |
-| Rain     | `classifyRainSeverity(mm)`            | ≥ 20      | ≥ 50                        | ≥ 100                       | daily `precipitation_sum`                                                        |
-| Snow     | `classifySnowSeverity(mm)`            | ≥ 5       | ≥ 15                        | ≥ 30                        | daily `precipitation_sum` (water equivalent, ≈ 1 mm = 1 cm of snow)              |
-| Wind     | `classifyWindSeverity(km/h)`          | 40 – < 60 | 60 – ≤ 100                  | > 100                       | strongest **hourly** `wind_speed_10m` of the day, converted from knots (× 1.852) |
-| Storm    | `classifyStormSeverity(code)`         | code 95   | —                           | code 96 or 99               | daily `weather_code`                                                             |
-| Sea      | `classifySeaSeverity(waveM, windKmh)` | wave ≥ 2  | wave ≥ 2.5 **or** wind ≥ 50 | wave ≥ 3.5 **or** wind ≥ 60 | daily max `wave_height` and the same daily max wind; **only with ocean data**    |
+| Category | Function                              | Moderate  | High                        | Severe                      | Input                                                                                  |
+| -------- | ------------------------------------- | --------- | --------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
+| Rain     | `classifyRainSeverity(mm)`            | ≥ 20      | ≥ 50                        | ≥ 100                       | daily `precipitation_sum`                                                              |
+| Snow     | `classifySnowSeverity(mm)`            | ≥ 5       | ≥ 15                        | ≥ 30                        | daily `precipitation_sum` (water equivalent, ≈ 1 mm = 1 cm of snow)                    |
+| Heat     | `classifyHeatSeverity(°C)`            | 33 – < 38 | 38 – ≤ 44                   | > 44                        | daily `apparent_temperature_max` ("feels like"), in °C; ignored if the field is absent |
+| Wind     | `classifyWindSeverity(km/h)`          | 40 – < 60 | 60 – ≤ 100                  | > 100                       | strongest **hourly** `wind_speed_10m` of the day, converted from knots (× 1.852)       |
+| Storm    | `classifyStormSeverity(code)`         | code 95   | —                           | code 96 or 99               | daily `weather_code`                                                                   |
+| Sea      | `classifySeaSeverity(waveM, windKmh)` | wave ≥ 2  | wave ≥ 2.5 **or** wind ≥ 50 | wave ≥ 3.5 **or** wind ≥ 60 | daily max `wave_height` and the same daily max wind; **only with ocean data**          |
 
 Details and edge cases:
 
 - Lower bounds are inclusive; wind severe is strictly above 100 km/h. A missing input is treated as `none`.
 - Sea takes the worst of wave and wind: wind alone can raise it even with small waves (e.g. 0.5 m + 50 km/h → high; 45 km/h alone → none). High sea shows "Not recommended for small boats"; severe shows "Avoid navigation".
 - **Snow replaces rain** on a snow day: a daily code of 71–77, 85 or 86 (the same codes that show the snow icon), **or** a thunderstorm code (95/96/99) on a day whose maximum temperature is `≤ 0 °C` (thundersnow: the daily code is the _worst hour_, so one thundery hour on a frozen day would otherwise read as a storm). On such days the storm alert is suppressed. Freezing-rain codes (66/67) stay rain.
-- Category order is stable: rain/snow, wind, storm, sea.
+- Heat limits are in °C; the tooltip shows them in the unit the user chose (33/38/44 °C = 91/100/111 °F). Heat is evaluated on every day, including snow days.
+- Category order is stable: rain/snow, heat, wind, storm, sea.
 - **Banner rule:** any `high` or `severe` within the **first 3 days** of the forecast (`WARNING_DAYS = 3`). Each category appears once, at its worst level, with its high/severe dates.
 
 ## Internationalization
@@ -340,4 +342,5 @@ Points where the code differs from what was discussed or planned, or looks unfin
 7. **Stray code in the backend geocode route.** `routes/weather.py` keeps a string-literal leftover of an earlier Open-Meteo geocode call inside `geocode()`, and `schemas/weather.py` has a `GeocodeResponse` model that no route uses. The route returns raw Nominatim JSON, which is why the frontend accepts two shapes.
 8. **`temperature_2m` hourly is requested but unused** by the UI, and per-hour `weather_code` is typed as "not sent by the backend yet" but the activity planner is already written to use it when it appears.
 9. **Responsiveness and full-page AA have not been verified** beyond the token tests and class usage (see the section above).
-10. **Roadmap items with no code:** push notifications and "Phase 2 — history with cache" have no implementation or stubs.
+10. **Heat alert depends on a backend change that is not in the repo yet.** The frontend reads `daily.apparent_temperature_max`, but `storm-tracker-backend/app/services/open_meteo.py` does not request it in the `daily` list, so the heat alert never appears until it is added.
+11. **Roadmap items with no code:** push notifications and "Phase 2 — history with cache" have no implementation or stubs.
