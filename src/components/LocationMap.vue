@@ -1,0 +1,62 @@
+<script setup lang="ts">
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useSelectedLocation } from '@/composables/useSelectedLocation'
+
+const { t } = useI18n()
+const { location, selectCoords } = useSelectedLocation()
+
+const el = ref<HTMLDivElement>()
+let map: L.Map | undefined
+let marker: L.Marker | undefined
+let fromMapClick = false
+
+const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+
+function placeMarker(lat: number, lon: number) {
+  if (!map) return
+  if (marker) marker.setLatLng([lat, lon])
+  else
+    marker = L.marker([lat, lon], {
+      icon: L.divIcon({
+        className: '',
+        html: '<span style="display:block;width:18px;height:18px;border-radius:9999px;background:#ef4444;border:3px solid #fff;box-shadow:0 0 4px #000"></span>',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+      }),
+    }).addTo(map)
+}
+
+onMounted(() => {
+  map = L.map(el.value!).setView([-15, -50], 4)
+  L.tileLayer(ESRI, {
+    maxZoom: 17,
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+  }).addTo(map)
+  map.on('click', (e: L.LeafletMouseEvent) => {
+    fromMapClick = true
+    selectCoords(e.latlng.lat, e.latlng.lng)
+  })
+  map.invalidateSize()
+  if (location.value) placeMarker(location.value.latitude, location.value.longitude)
+})
+
+watch(location, (loc) => {
+  if (!loc || !map) return
+  placeMarker(loc.latitude, loc.longitude)
+  // Clicks keep the user's zoom; a search pick recenters on the place.
+  if (!fromMapClick) map.setView([loc.latitude, loc.longitude], 9)
+  fromMapClick = false
+})
+
+onBeforeUnmount(() => map?.remove())
+</script>
+
+<template>
+  <div>
+    <div ref="el" role="application" :aria-label="t('map.label')" class="z-0 h-72 w-full rounded-lg border border-line sm:h-96" />
+    <p class="mt-1 text-sm text-muted">{{ t('map.hint') }}</p>
+  </div>
+</template>
