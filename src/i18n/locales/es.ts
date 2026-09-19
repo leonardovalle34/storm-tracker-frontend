@@ -1,0 +1,33 @@
+export default {
+  app: { title: 'Storm Tracker' },
+  common: { loading: 'Cargando…', error: 'No se pudieron cargar los datos.', retry: 'Reintentar', noLocation: 'Elige un lugar en el mapa o búscalo.' },
+  header: {
+    searchLabel: 'Buscar lugar',
+    searchPlaceholder: 'Busca una ciudad o lugar…',
+    searching: 'Buscando…',
+    noResults: 'Sin resultados',
+    language: 'Idioma',
+    themeToggle: 'Cambiar tema claro/oscuro',
+  },
+  footer: { madeBy: 'Hecho por', company: 'Nexus Tecnologia' },
+  map: { title: 'Elige un lugar', label: 'Mapa satelital', hint: 'Haz clic en el mapa para seleccionar un lugar.' },
+  forecast: { title: 'Pronóstico de 16 días', precipitation: 'Precipitación', max: 'Máx', min: 'Mín' },
+  weather: {
+    clear: 'Despejado', partlyCloudy: 'Parcialmente nublado', overcast: 'Nublado', fog: 'Niebla',
+    drizzle: 'Llovizna', rain: 'Lluvia', snow: 'Nieve', showers: 'Chubascos', thunderstorm: 'Tormenta', unknown: 'Tiempo',
+  },
+  wind: {
+    title: 'Viento', speed: 'Viento (nudos)', direction: 'Dirección', hour: 'Hora',
+    level: { calm: 'Calma', moderate: 'Moderado', strong: 'Fuerte', extreme: 'Extremo' },
+  },
+  moon: {
+    'New Moon': 'Luna Nueva', 'Waxing Crescent': 'Creciente', 'First Quarter': 'Cuarto Creciente',
+    'Waxing Gibbous': 'Gibosa Creciente', 'Full Moon': 'Luna Llena', 'Waning Gibbous': 'Gibosa Menguante',
+    'Last Quarter': 'Cuarto Menguante', 'Waning Crescent': 'Menguante',
+  },
+  ocean: { title: 'Océano', swell: 'Oleaje (m)', tide: 'Marea (m)', waterTemp: 'Temp. del agua (°C)' },
+  models: {
+    title: 'Mapas de modelo', rain: 'Lluvia', snow: 'Nieve', temp: 'Temperatura', waves: 'Olas', sst: 'Temperatura del agua',
+    expand: 'Ampliar mapa', close: 'Cerrar',
+  },
+}
