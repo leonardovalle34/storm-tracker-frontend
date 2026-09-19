@@ -1,3 +1,5 @@
+import type { TempUnit } from './temperature'
+
 export type WindyOverlay = 'rain' | 'wind' | 'temp' | 'waves' | 'sst'
 
 /** Windy embed2.html. `expanded` = modal version: closer zoom and the Windy menu visible. */
@@ -5,6 +7,7 @@ export function windyUrl(
   loc: { latitude: number; longitude: number },
   overlay: WindyOverlay,
   expanded = false,
+  tempUnit: TempUnit = 'C',
 ): string {
   const p = new URLSearchParams({
     lat: String(loc.latitude),
@@ -22,7 +25,7 @@ export function windyUrl(
     type: 'map',
     location: 'coordinates',
     metricWind: 'kt',
-    metricTemp: '°C',
+    metricTemp: `°${tempUnit}`,
     radarRange: '-1',
   })
   return `https://embed.windy.com/embed2.html?${p}`

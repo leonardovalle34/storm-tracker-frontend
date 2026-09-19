@@ -15,9 +15,9 @@ import {
 } from '@/utils/gridStyles'
 import { buildWindDays } from '@/utils/hourly'
 import type { WindLevel } from '@/utils/wind'
-import DayHeader from './DayHeader.vue'
-import MoonPhase from './MoonPhase.vue'
-import WindDirection from './WindDirection.vue'
+import DayHeader from '@/components/DayHeader/DayHeader.vue'
+import MoonPhase from '@/components/MoonPhase/MoonPhase.vue'
+import WindDirection from '@/components/WindDirection/WindDirection.vue'
 
 const props = defineProps<{ hourly: HourlyForecast }>()
 const { t, locale } = useI18n()

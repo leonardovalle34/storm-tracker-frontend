@@ -1,4 +1,6 @@
-import { afterEach, vi } from 'vitest'
+import { config } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { afterEach, beforeEach, vi } from 'vitest'
 
 // jsdom does not implement <dialog> modal methods.
 if (typeof HTMLDialogElement !== 'undefined') {
@@ -10,6 +12,17 @@ if (typeof HTMLDialogElement !== 'undefined') {
     this.dispatchEvent(new Event('close'))
   }
 }
+
+const initial = createPinia()
+setActivePinia(initial)
+config.global.plugins = [initial] // for components mounted while collecting tests
+
+// Fresh Pinia per test: every mounted component and every direct store call shares it.
+beforeEach(() => {
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  config.global.plugins = [pinia]
+})
 
 afterEach(() => {
   vi.useRealTimers()

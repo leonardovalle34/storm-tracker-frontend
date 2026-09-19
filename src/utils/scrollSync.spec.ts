@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  _resetScrollSyncSetting,
-  createScrollSync,
-  scrollSync,
-  useScrollSyncSetting,
-} from './useSyncedScroll'
+import { createScrollSync } from './scrollSync'
 
 /** jsdom does not lay out, so give elements a settable scrollLeft and count the writes. */
 function scroller() {
@@ -125,32 +120,5 @@ describe('createScrollSync', () => {
     sync.setEnabled(false)
     sync.register(b.el, () => 100)
     expect(b.el.scrollLeft).toBe(0)
-  })
-})
-
-describe('scroll sync setting', () => {
-  beforeEach(() => _resetScrollSyncSetting())
-
-  it('is on by default', () => {
-    expect(useScrollSyncSetting().enabled.value).toBe(true)
-  })
-
-  it('toggle flips it, persists it and drives the shared scroll group', () => {
-    const spy = vi.spyOn(scrollSync, 'setEnabled')
-    const { enabled, toggle } = useScrollSyncSetting()
-    toggle()
-    expect(enabled.value).toBe(false)
-    expect(localStorage.getItem('st-scroll-sync')).toBe('off')
-    expect(spy).toHaveBeenLastCalledWith(false)
-    toggle()
-    expect(enabled.value).toBe(true)
-    expect(spy).toHaveBeenLastCalledWith(true)
-    spy.mockRestore()
-  })
-
-  it('restores the stored preference', () => {
-    localStorage.setItem('st-scroll-sync', 'off')
-    _resetScrollSyncSetting()
-    expect(useScrollSyncSetting().enabled.value).toBe(false)
   })
 })

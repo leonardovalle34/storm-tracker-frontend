@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { cardinal } from '@/utils/wind'
-import WindArrow from './WindArrow.vue'
+import WindArrow from '@/components/WindArrow/WindArrow.vue'
 
 // Arrow + compass letters from a bearing in degrees. Color comes from the containing cell.
 defineProps<{ direction: number | null }>()

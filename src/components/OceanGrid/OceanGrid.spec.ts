@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { i18n, setLocale } from '@/i18n'
+import { useUnitsStore } from '@/stores/units'
 import { makeForecast, makeMarine } from '@/test/fixtures'
 import OceanGrid from './OceanGrid.vue'
 
@@ -10,9 +11,8 @@ const dayList = (n: number) =>
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
 
-vi.mock('@/services/api', () => ({
-  fetchMoonPhase: vi.fn().mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'Full Moon' }),
-  ApiError: class extends Error {},
+vi.mock('@/services/weatherService', () => ({
+  getMoonPhase: vi.fn().mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'Full Moon' }),
 }))
 
 describe('OceanGrid', () => {
@@ -21,6 +21,20 @@ describe('OceanGrid', () => {
   marine.hourly.swell_wave_height[3] = null // day 1, 3h
   marine.hourly.swell_wave_direction[3] = null
   const w = mount(OceanGrid, { props: { hourly: marine.hourly }, global: { plugins: [i18n] } })
+
+  it('shows the water temperature in Fahrenheit (label and values) when chosen', async () => {
+    // own mount: the shared `w` above was built while collecting tests, with a different Pinia
+    const w = mount(OceanGrid, { props: { hourly: marine.hourly }, global: { plugins: [i18n] } })
+    const units = useUnitsStore()
+    units.setTemperature('F')
+    await w.vm.$nextTick()
+    expect(w.text()).toContain('Temp. da água (°F)')
+    expect(w.findAll('[data-testid="temp-cell"]')[0].text()).toBe('72.3') // 22.4 C
+    units.setTemperature('C')
+    await w.vm.$nextTick()
+    expect(w.text()).toContain('Temp. da água (°C)')
+    expect(w.findAll('[data-testid="temp-cell"]')[0].text()).toBe('22.4')
+  })
 
   it('is one continuous horizontally scrolling table, days side by side', () => {
     expect(w.findAll('table')).toHaveLength(1)
@@ -213,7 +227,7 @@ describe('OceanGrid', () => {
       const g = mkSummary()
       await flushPromises()
       expect(g.findAll('[data-testid="clarity-cell"]')).toHaveLength(3)
-      expect(g.get('[data-testid="clarity-row"] th').text()).toContain('Claridade da água')
+      expect(g.get('[data-testid="clarity-row"] th').text()).toContain('Visibilidade da água')
       expect(g.get('[data-testid="clarity-row"]').html()).toContain('Estimativa')
     })
 

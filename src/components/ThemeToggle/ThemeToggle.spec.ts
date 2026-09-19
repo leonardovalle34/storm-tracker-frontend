@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { _resetTheme } from '@/composables/useTheme'
+import { useThemeStore } from '@/stores/theme'
 import { i18n, setLocale } from '@/i18n'
 import ThemeToggle from './ThemeToggle.vue'
 
 describe('ThemeToggle', () => {
-  beforeEach(() => _resetTheme())
+  beforeEach(() => useThemeStore().init())
   const mk = () => mount(ThemeToggle, { global: { plugins: [i18n] } })
 
   it('is a switch reflecting the theme', async () => {
@@ -55,7 +55,7 @@ describe('ThemeToggle', () => {
   })
 
   it('keeps the no-sun/moon rule for label and tooltip too', async () => {
-    for (const l of ['pt', 'en', 'es'] as const) {
+    for (const l of ['pt', 'en', 'es', 'fr', 'de'] as const) {
       setLocale(l)
       const w = mk()
       expect(w.html()).not.toMatch(/sun|moon|sol\b|lua\b|☀|🌙|☾/i)

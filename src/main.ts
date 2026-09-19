@@ -1,8 +1,11 @@
+import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from './App.vue'
 import { i18n } from './i18n'
-import { _resetTheme } from './composables/useTheme'
+import { useThemeStore } from './stores/theme'
 import './style.css'
 
-_resetTheme() // apply the stored theme before first paint
-createApp(App).use(i18n).mount('#app')
+const pinia = createPinia()
+const app = createApp(App).use(pinia).use(i18n)
+useThemeStore(pinia).init() // apply the stored theme before first paint
+app.mount('#app')

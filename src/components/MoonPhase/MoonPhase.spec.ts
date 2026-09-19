@@ -1,11 +1,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as api from '@/services/api'
+import { ApiError } from '@/services/http'
+import * as weatherService from '@/services/weatherService'
 import { i18n, setLocale } from '@/i18n'
 import MoonPhase from './MoonPhase.vue'
 
-vi.mock('@/services/api', async (orig) => ({ ...(await orig<typeof api>()), fetchMoonPhase: vi.fn() }))
-const moon = vi.mocked(api.fetchMoonPhase)
+vi.mock('@/services/weatherService')
+const moon = vi.mocked(weatherService.getMoonPhase)
 
 describe('MoonPhase', () => {
   beforeEach(() => {
@@ -26,7 +27,7 @@ describe('MoonPhase', () => {
   })
 
   it('shows a friendly inline message on a 400 (invalid date)', async () => {
-    moon.mockRejectedValue(new api.ApiError(400, 'Invalid date format'))
+    moon.mockRejectedValue(new ApiError(400, 'Invalid date format'))
     const w = mount(MoonPhase, { props: { date: 'garbage' }, global: { plugins: [i18n] } })
     await flushPromises()
     const msg = w.get('[data-testid="moon-error"]')

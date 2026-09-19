@@ -1,17 +1,21 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import * as api from '@/services/api'
+import * as weatherService from '@/services/weatherService'
 import { i18n, setLocale } from '@/i18n'
 import { makeForecast } from '@/test/fixtures'
 import WindGrid from './WindGrid.vue'
 
-vi.mock('@/services/api')
+vi.mock('@/services/weatherService')
 
 describe('WindGrid', () => {
   beforeEach(() => {
     setLocale('pt')
-    vi.mocked(api.fetchMoonPhase).mockReset()
-    vi.mocked(api.fetchMoonPhase).mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'New Moon' })
+    vi.mocked(weatherService.getMoonPhase).mockReset()
+    vi.mocked(weatherService.getMoonPhase).mockResolvedValue({
+      date: 'x',
+      phase_index: 1,
+      phase_name: 'New Moon',
+    })
   })
   const mk = async () => {
     const w = mount(WindGrid, { props: { hourly: makeForecast().hourly }, global: { plugins: [i18n] } })
@@ -58,7 +62,7 @@ describe('WindGrid', () => {
     for (const h of w.findAll('[data-testid="day-head"]')) {
       expect(h.findAll('[data-testid="moon-phase"]')).toHaveLength(1)
     }
-    expect(api.fetchMoonPhase).toHaveBeenCalledTimes(2)
+    expect(weatherService.getMoonPhase).toHaveBeenCalledTimes(2)
   })
 
   it('colors compact speed cells by intensity with theme token classes (kt)', async () => {

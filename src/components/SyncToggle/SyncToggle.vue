@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useScrollSyncSetting } from '@/composables/useSyncedScroll'
+import { storeToRefs } from 'pinia'
+import { useScrollSyncStore } from '@/stores/scrollSync'
 
 const { t } = useI18n()
-const { enabled, toggle } = useScrollSyncSetting()
+const scrollSyncStore = useScrollSyncStore()
+const { enabled } = storeToRefs(scrollSyncStore)
+const { toggle } = scrollSyncStore
 const tipId = `sync-tip-${useId()}`
 </script>
 

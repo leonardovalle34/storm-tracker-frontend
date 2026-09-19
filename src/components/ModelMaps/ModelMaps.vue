@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useUnitsStore } from '@/stores/units'
 import type { Location } from '@/types/weather'
 import { windyUrl, type WindyOverlay } from '@/utils/windy'
 
 const props = defineProps<{ location: Pick<Location, 'latitude' | 'longitude'>; coastal: boolean }>()
 const { t } = useI18n()
+const { temperature: tempUnit } = storeToRefs(useUnitsStore())
 
 const ALWAYS: WindyOverlay[] = ['rain', 'wind', 'temp']
 const COASTAL: WindyOverlay[] = ['waves', 'sst']
@@ -39,7 +42,7 @@ function onBackdrop(e: MouseEvent) {
         <div class="relative h-64">
           <iframe
             data-testid="model-frame"
-            :src="windyUrl(location, o)"
+            :src="windyUrl(location, o, false, tempUnit)"
             :title="t(`models.${o}`)"
             loading="lazy"
             tabindex="-1"
@@ -79,7 +82,7 @@ function onBackdrop(e: MouseEvent) {
         <iframe
           v-if="active"
           data-testid="modal-frame"
-          :src="windyUrl(location, active, true)"
+          :src="windyUrl(location, active, true, tempUnit)"
           :title="t(`models.${active}`)"
           class="min-h-0 w-full flex-1 border-0"
         />

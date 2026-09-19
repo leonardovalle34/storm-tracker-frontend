@@ -1,29 +1,20 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ApiError, fetchMoonPhase } from '@/services/api'
-import type { MoonPhase } from '@/types/weather'
+import { useWeatherStore } from '@/stores/weather'
 import { isKnownPhase, moonIcon } from '@/utils/moon'
 
 const props = defineProps<{ date: string }>()
 const { t } = useI18n()
-const phase = ref<MoonPhase | null>(null)
-const invalid = ref<string | null>(null) // backend detail of a 400 (bad date format)
+const weatherStore = useWeatherStore()
+const { moonPhases, moonErrors } = storeToRefs(weatherStore)
+const phase = computed(() => moonPhases.value[props.date] ?? null)
+const invalid = computed<string | null>(() => moonErrors.value[props.date] ?? null) // backend detail of a 400 (bad date format)
 
 watch(
   () => props.date,
-  async (date) => {
-    phase.value = null
-    invalid.value = null
-    try {
-      const p = await fetchMoonPhase(date)
-      if (date === props.date) phase.value = p
-    } catch (e) {
-      if (date !== props.date) return
-      // A 400 is shown inline; any other failure just hides this optional indicator.
-      if (e instanceof ApiError && e.status === 400) invalid.value = e.detail ?? ''
-    }
-  },
+  (date) => void weatherStore.loadMoonPhase(date),
   { immediate: true },
 )
 </script>

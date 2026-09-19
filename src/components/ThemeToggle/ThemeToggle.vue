@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useTheme } from '@/composables/useTheme'
+import { storeToRefs } from 'pinia'
+import { useThemeStore } from '@/stores/theme'
 
 const { t } = useI18n()
-const { theme, toggle } = useTheme()
+const themeStore = useThemeStore()
+const { theme } = storeToRefs(themeStore)
+const { toggle } = themeStore
 const tipId = `theme-tip-${useId()}`
 
 const isDark = computed(() => theme.value === 'dark')

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import roundLogo from '@/assets/round-logo.png'
-import LanguageSelect from './LanguageSelect.vue'
-import LocationSearch from './LocationSearch.vue'
-import ThemeToggle from './ThemeToggle.vue'
+import LanguageSelect from '@/components/LanguageSelect/LanguageSelect.vue'
+import LocationSearch from '@/components/LocationSearch/LocationSearch.vue'
+import ThemeToggle from '@/components/ThemeToggle/ThemeToggle.vue'
+import UnitToggle from '@/components/UnitToggle/UnitToggle.vue'
 
 const { t } = useI18n()
 </script>
@@ -18,6 +19,7 @@ const { t } = useI18n()
       </div>
       <div class="ml-auto flex items-center gap-2 sm:ml-0">
         <LanguageSelect />
+        <UnitToggle />
         <ThemeToggle />
       </div>
     </div>

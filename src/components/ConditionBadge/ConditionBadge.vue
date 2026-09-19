@@ -27,8 +27,9 @@ const badge = computed(() => {
     const level = uvLevel(props.value)
     return {
       tone: UV_TONE[level],
-      text: `UV ${Math.round(props.value)} · ${t(`uv.level.${level}`)}`,
-      title: t('uv.label'),
+      // Discreet: just the index (the colour carries the level); the level is in the tooltip.
+      text: `UV ${Math.round(props.value)}`,
+      title: `${t('uv.label')}: ${t(`uv.level.${level}`)}`,
     }
   }
   const level = clarityLabel(props.value)
@@ -40,8 +41,14 @@ const badge = computed(() => {
   <span
     data-testid="badge"
     :title="badge.title"
-    class="inline-block rounded px-1.5 py-0.5 text-xs font-semibold leading-tight"
-    :class="TONE_CLASS[badge.tone]"
+    class="inline-block rounded leading-tight"
+    :class="[
+      TONE_CLASS[badge.tone],
+      // fixed size so every UV chip is identical, whatever the number
+      kind === 'uv'
+        ? 'w-12 py-px text-center text-[11px] font-medium'
+        : 'px-1.5 py-0.5 text-xs font-semibold',
+    ]"
     >{{ badge.text }}</span
   >
 </template>

@@ -1,16 +1,15 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import * as api from '@/services/api'
+import * as weatherService from '@/services/weatherService'
 import { i18n } from '@/i18n'
 import { makeForecast, makeMarine } from '@/test/fixtures'
-import ForecastCards from './ForecastCards.vue'
-import OceanGrid from './OceanGrid.vue'
-import WindGrid from './WindGrid.vue'
+import ForecastCards from '@/components/ForecastCards/ForecastCards.vue'
+import OceanGrid from '@/components/OceanGrid/OceanGrid.vue'
+import WindGrid from '@/components/WindGrid/WindGrid.vue'
 
-vi.mock('@/services/api', () => ({
-  fetchMoonPhase: vi.fn().mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'Full Moon' }),
-  ApiError: class extends Error {},
+vi.mock('@/services/weatherService', () => ({
+  getMoonPhase: vi.fn().mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'Full Moon' }),
 }))
 
 function stubScroll(el: Element) {
@@ -20,7 +19,7 @@ function stubScroll(el: Element) {
 }
 
 describe('forecast cards, wind and ocean scroll together', () => {
-  beforeEach(() => vi.mocked(api.fetchMoonPhase).mockClear())
+  beforeEach(() => vi.mocked(weatherService.getMoonPhase).mockClear())
 
   it('scrolling any of the three moves the other two to the same day', async () => {
     const days = ['2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22']

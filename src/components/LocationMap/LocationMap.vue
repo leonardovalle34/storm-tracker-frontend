@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import { storeToRefs } from 'pinia'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSelectedLocation } from '@/composables/useSelectedLocation'
+import { useLocationStore } from '@/stores/location'
 
 const { t } = useI18n()
-const { location, selectCoords } = useSelectedLocation()
+const locationStore = useLocationStore()
+const { location } = storeToRefs(locationStore)
+const { selectCoords } = locationStore
 
 const el = ref<HTMLDivElement>()
 let map: L.Map | undefined
@@ -67,13 +70,5 @@ onBeforeUnmount(() => map?.remove())
 </script>
 
 <template>
-  <div>
-    <div
-      ref="el"
-      role="application"
-      :aria-label="t('map.label')"
-      class="z-0 h-72 w-full rounded-lg border border-line sm:h-96"
-    />
-    <p class="mt-1 text-sm text-muted">{{ t('map.hint') }}</p>
-  </div>
+  <div ref="el" role="application" :aria-label="t('map.label')" class="z-0 h-72 w-full sm:h-96" />
 </template>

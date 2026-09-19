@@ -1,6 +1,5 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { _resetScrollSyncSetting } from '@/composables/useSyncedScroll'
 import { i18n, setLocale } from '@/i18n'
 import SyncToggle from './SyncToggle.vue'
 
@@ -9,7 +8,6 @@ const mk = () => mount(SyncToggle, { global: { plugins: [i18n] } })
 describe('SyncToggle', () => {
   beforeEach(() => {
     setLocale('pt')
-    _resetScrollSyncSetting()
   })
 
   it('is a labelled switch, on by default, that flips on click', async () => {

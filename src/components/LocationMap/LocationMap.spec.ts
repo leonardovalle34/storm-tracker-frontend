@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { _resetSelectedLocation, useSelectedLocation } from '@/composables/useSelectedLocation'
+import { useLocationStore } from '@/stores/location'
 
 const h = vi.hoisted(() => {
   const handlers: Record<string, (e: unknown) => void> = {}
@@ -38,7 +38,6 @@ const mk = () => mount(LocationMap, { global: { plugins: [i18n] } })
 
 describe('LocationMap', () => {
   beforeEach(() => {
-    _resetSelectedLocation()
     vi.clearAllMocks()
     h.tiles.length = 0
   })
@@ -72,12 +71,12 @@ describe('LocationMap', () => {
   it('a map click feeds the shared selected location', () => {
     mk()
     h.handlers.click({ latlng: { lat: -23.5, lng: -46.6 } })
-    expect(useSelectedLocation().location.value).toMatchObject({ latitude: -23.5, longitude: -46.6 })
+    expect(useLocationStore().location).toMatchObject({ latitude: -23.5, longitude: -46.6 })
   })
 
   it('a location picked elsewhere (search) moves the marker and view', async () => {
     mk()
-    useSelectedLocation().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
+    useLocationStore().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
     await nextTick()
     expect(L.marker).toHaveBeenCalledWith([-23.9, -46.3], expect.anything())
     expect(h.map.setView).toHaveBeenLastCalledWith([-23.9, -46.3], expect.any(Number))
@@ -89,7 +88,7 @@ describe('LocationMap', () => {
     ;(w.vm as unknown as { refresh: () => void }).refresh()
     expect(h.map.invalidateSize).toHaveBeenCalled()
     expect(h.map.panTo).not.toHaveBeenCalled() // nothing selected yet
-    useSelectedLocation().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
+    useLocationStore().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
     await nextTick()
     ;(w.vm as unknown as { refresh: () => void }).refresh()
     expect(h.map.panTo).toHaveBeenCalledWith([-23.9, -46.3])

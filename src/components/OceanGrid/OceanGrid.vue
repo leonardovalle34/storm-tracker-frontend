@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSyncedScroll } from '@/composables/useSyncedScroll'
+import { useUnitsStore } from '@/stores/units'
+import { toUnit } from '@/utils/temperature'
 import type { ForecastResponse, MarineHourly } from '@/types/weather'
 import { planDays, type Recommendation } from '@/utils/activityPlanner'
 import { ACTIVITIES } from '@/utils/activityScorer'
@@ -17,15 +20,16 @@ import {
   tableWidth,
 } from '@/utils/gridStyles'
 import { buildMarineDays, firstGapIndex, type MarineColumn } from '@/utils/hourly'
-import ActivityCell from './ActivityCell.vue'
-import ConditionBadge from './ConditionBadge.vue'
-import DayHeader from './DayHeader.vue'
-import MoonPhase from './MoonPhase.vue'
-import TideChart from './TideChart.vue'
-import WindDirection from './WindDirection.vue'
+import ActivityCell from '@/components/ActivityCell/ActivityCell.vue'
+import ConditionBadge from '@/components/ConditionBadge/ConditionBadge.vue'
+import DayHeader from '@/components/DayHeader/DayHeader.vue'
+import MoonPhase from '@/components/MoonPhase/MoonPhase.vue'
+import TideChart from '@/components/TideChart/TideChart.vue'
+import WindDirection from '@/components/WindDirection/WindDirection.vue'
 
 const props = defineProps<{ hourly: MarineHourly; forecast?: ForecastResponse | null }>()
 const { t, locale } = useI18n()
+const { temperature: unit } = storeToRefs(useUnitsStore())
 
 const scroller = ref<HTMLElement | null>(null)
 useSyncedScroll(scroller, dayPitchPx)
@@ -65,7 +69,12 @@ const rows: Row[] = [
   { id: 'period', label: 'ocean.period', value: (c) => c.period, fmt: fixed(1) },
   { id: 'swelldir', label: 'ocean.swellDir', value: (c) => c.swellDir },
   { id: 'tide', label: 'ocean.tide', value: (c) => c.tide, fmt: tideFmt },
-  { id: 'temp', label: 'ocean.waterTemp', value: (c) => c.waterTemp, fmt: fixed(1) },
+  {
+    id: 'temp',
+    label: 'ocean.waterTemp',
+    value: (c) => c.waterTemp,
+    fmt: (v) => toUnit(v, unit.value).toFixed(1),
+  },
 ]
 const label =
   'sticky left-0 z-10 border-r border-line bg-surface px-2 text-left text-xs font-normal text-muted'
@@ -125,7 +134,7 @@ const label =
         </DayHeader>
         <tbody>
           <tr v-for="r in rows" :key="r.id">
-            <th scope="row" :class="label">{{ t(r.label) }}</th>
+            <th scope="row" :class="label">{{ t(r.label, { unit: `°${unit}` }) }}</th>
             <td
               v-for="c in columns"
               :key="`${c.date}-${c.hour}`"
