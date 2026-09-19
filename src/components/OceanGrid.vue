@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSyncedScroll } from '@/composables/useSyncedScroll'
 import type { ForecastResponse, MarineHourly } from '@/types/weather'
 import { planDays, type Recommendation } from '@/utils/activityPlanner'
 import { ACTIVITIES } from '@/utils/activityScorer'
 import { clarityByDay } from '@/utils/waterClarity'
 import { formatDay } from '@/utils/date'
-import { CELL, DAY_START, HOUR_COL_REM, HOURS_PER_DAY, LABEL_COL_REM, tableWidth } from '@/utils/gridStyles'
+import {
+  CELL,
+  DAY_START,
+  dayPitchPx,
+  HOUR_COL_REM,
+  HOURS_PER_DAY,
+  LABEL_COL_REM,
+  tableWidth,
+} from '@/utils/gridStyles'
 import { buildMarineDays, firstGapIndex, type MarineColumn } from '@/utils/hourly'
 import ActivityCell from './ActivityCell.vue'
 import ConditionBadge from './ConditionBadge.vue'
@@ -17,6 +26,9 @@ import WindDirection from './WindDirection.vue'
 
 const props = defineProps<{ hourly: MarineHourly; forecast?: ForecastResponse | null }>()
 const { t, locale } = useI18n()
+
+const scroller = ref<HTMLElement | null>(null)
+useSyncedScroll(scroller, dayPitchPx)
 
 const days = computed(() => buildMarineDays(props.hourly))
 // Every day of the response is drawn. Wave-model data thins out with distance, and where it ends varies
@@ -62,7 +74,11 @@ const label =
 <template>
   <div>
     <h2 class="mb-3 text-xl font-semibold">{{ t('ocean.title') }}</h2>
-    <div data-testid="ocean-scroll" class="overflow-x-auto rounded-lg border border-line bg-surface">
+    <div
+      ref="scroller"
+      data-testid="ocean-scroll"
+      class="overflow-x-auto rounded-lg border border-line bg-surface"
+    >
       <table class="table-fixed border-collapse" :style="{ width: tableWidth(days.length) }">
         <colgroup>
           <col :style="{ width: `${LABEL_COL_REM}rem` }" />

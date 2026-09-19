@@ -8,3 +8,10 @@ export const HOUR_COL_REM = 2.5
 export const HOURS_PER_DAY = 7
 export const tableWidth = (days: number): string =>
   `${LABEL_COL_REM + days * HOURS_PER_DAY * HOUR_COL_REM}rem`
+
+/** Pixels of one day (7 hour columns) in the wind/ocean tables, following the root font size. */
+export const dayPitchPx = (): number => {
+  const root =
+    typeof document !== 'undefined' ? parseFloat(getComputedStyle(document.documentElement).fontSize) : NaN
+  return HOURS_PER_DAY * HOUR_COL_REM * (root > 0 ? root : 16)
+}

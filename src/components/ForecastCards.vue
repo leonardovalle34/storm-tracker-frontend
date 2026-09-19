@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSyncedScroll } from '@/composables/useSyncedScroll'
 import type { DailyForecast } from '@/types/weather'
 import { formatDay } from '@/utils/date'
 import { describeWeather } from '@/utils/weatherCode'
@@ -8,6 +9,14 @@ import ConditionBadge from './ConditionBadge.vue'
 
 const props = defineProps<{ daily: DailyForecast }>()
 const { t, locale } = useI18n()
+
+const scroller = ref<HTMLElement | null>(null)
+// one card + gap in px (measured; 124 = w-28 + gap-3 when there is no layout)
+useSyncedScroll(scroller, () => {
+  const [a, b] = Array.from(scroller.value?.children ?? []) as HTMLElement[]
+  const measured = a && b ? b.offsetLeft - a.offsetLeft : 0
+  return measured > 0 ? measured : 124
+})
 
 const cards = computed(() =>
   props.daily.time.map((date, i) => ({
@@ -25,7 +34,7 @@ const cards = computed(() =>
 <template>
   <div>
     <h2 class="mb-3 text-xl font-semibold">{{ t('forecast.title') }}</h2>
-    <div data-testid="day-cards" class="flex gap-3 overflow-x-auto pb-2">
+    <div ref="scroller" data-testid="day-cards" class="flex gap-3 overflow-x-auto pb-2">
       <article
         v-for="c in cards"
         :key="c.date"
