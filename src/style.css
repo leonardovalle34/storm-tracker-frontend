@@ -1,1 +1,89 @@
 @import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. Light values live in :root, dark values in .dark.
+ * Wind intensity pairs are designed per theme (not a darkened copy of the
+ * light pair) and every fg/bg pair is checked for WCAG AA (4.5:1) in theme.spec.ts.
+ * --brand is the logo navy: fixed brand color, intentionally NOT redefined in .dark.
+ */
+:root {
+  --brand: #0b2338;
+  --brand-fg: #f1f5f9;
+  --bg: #f1f5f9;
+  --surface: #ffffff;
+  --surface-2: #e2e8f0;
+  --text: #0f172a;
+  --muted: #475569;
+  --border: #cbd5e1;
+  --border-strong: #64748b;
+  --accent: #0e7490;
+  --accent-fg: #ffffff;
+  --ocean: #0f766e;
+
+  --wind-calm-bg: #bbf7d0;
+  --wind-calm-fg: #14532d;
+  --wind-moderate-bg: #fde68a;
+  --wind-moderate-fg: #713f12;
+  --wind-strong-bg: #fdba74;
+  --wind-strong-fg: #7c2d12;
+  --wind-extreme-bg: #fca5a5;
+  --wind-extreme-fg: #7f1d1d;
+}
+
+.dark {
+  --bg: #0a111d;
+  --surface: #111c2e;
+  --surface-2: #1c2a42;
+  --text: #e2e8f0;
+  --muted: #a3b1c6;
+  --border: #2b3b57;
+  --border-strong: #7f93b3;
+  --accent: #22d3ee;
+  --accent-fg: #06202a;
+  --ocean: #2dd4bf;
+
+  --wind-calm-bg: #14532d;
+  --wind-calm-fg: #dcfce7;
+  --wind-moderate-bg: #713f12;
+  --wind-moderate-fg: #fef3c7;
+  --wind-strong-bg: #9a3412;
+  --wind-strong-fg: #ffedd5;
+  --wind-extreme-bg: #991b1b;
+  --wind-extreme-fg: #fee2e2;
+}
+
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-page: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-ocean: var(--ocean);
+  --color-wind-calm: var(--wind-calm-bg);
+  --color-wind-calm-fg: var(--wind-calm-fg);
+  --color-wind-moderate: var(--wind-moderate-bg);
+  --color-wind-moderate-fg: var(--wind-moderate-fg);
+  --color-wind-strong: var(--wind-strong-bg);
+  --color-wind-strong-fg: var(--wind-strong-fg);
+  --color-wind-extreme: var(--wind-extreme-bg);
+  --color-wind-extreme-fg: var(--wind-extreme-fg);
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+}
