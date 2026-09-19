@@ -15,6 +15,11 @@ export default {
     themeToggle: 'Cambiar tema claro/oscuro',
   },
   footer: { madeBy: 'Hecho por', company: 'Nexus Tecnologia' },
+  scrollSync: {
+    label: 'Sincronizar desplazamiento',
+    tooltip:
+      'Si está activado, desplazar el pronóstico, el viento o el océano mueve los tres juntos, siempre en el mismo día. Desactívalo para desplazar cada uno de forma independiente.',
+  },
   map: {
     none: 'Ninguna ubicación seleccionada',
     choose: 'Elegir ubicación',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SyncToggle from './SyncToggle.vue'
 import { useSyncedScroll } from '@/composables/useSyncedScroll'
 import type { HourlyForecast } from '@/types/weather'
 import { formatDay } from '@/utils/date'
@@ -44,7 +45,10 @@ const label =
 
 <template>
   <div>
-    <h2 class="mb-3 text-xl font-semibold">{{ t('wind.title') }}</h2>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-xl font-semibold">{{ t('wind.title') }}</h2>
+      <SyncToggle />
+    </div>
     <div
       ref="scroller"
       data-testid="wind-scroll"

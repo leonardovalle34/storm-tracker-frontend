@@ -32,6 +32,10 @@ describe('OceanGrid', () => {
     expect(w.findAll('[data-testid="hour-head"]')).toHaveLength(14)
   })
 
+  it('has the scroll sync toggle in its header', () => {
+    expect(w.find('button[role="switch"]').exists()).toBe(true)
+  })
+
   it('has a stronger divider between days', () => {
     const cells = w.findAll('[data-testid="swell-cell"]')
     cells.forEach((c, i) => expect(c.classes().includes('border-l-2')).toBe(i % 7 === 0))

@@ -44,6 +44,10 @@ describe('ForecastCards', () => {
     expect(w.find('[data-testid="uv"]').exists()).toBe(false)
   })
 
+  it('has the scroll sync toggle in its header', () => {
+    expect(w.find('button[role="switch"]').exists()).toBe(true)
+  })
+
   it('has a translated title', () => {
     expect(w.text()).toContain('Previsão de 16 dias')
   })

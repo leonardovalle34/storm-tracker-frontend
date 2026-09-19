@@ -15,6 +15,11 @@ export default {
     themeToggle: 'Alternar tema claro/escuro',
   },
   footer: { madeBy: 'Feito por', company: 'Nexus Tecnologia' },
+  scrollSync: {
+    label: 'Sincronizar rolagem',
+    tooltip:
+      'Quando ligado, rolar a previsão, o vento ou o oceano move os três quadros juntos, sempre no mesmo dia. Desligue para rolar cada um de forma independente.',
+  },
   map: {
     none: 'Nenhum local selecionado',
     choose: 'Escolher local',

@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createScrollSync } from './useSyncedScroll'
+import {
+  _resetScrollSyncSetting,
+  createScrollSync,
+  scrollSync,
+  useScrollSyncSetting,
+} from './useSyncedScroll'
 
 /** jsdom does not lay out, so give elements a settable scrollLeft and count the writes. */
 function scroller() {
@@ -86,5 +91,66 @@ describe('createScrollSync', () => {
     sync.register(b.el, () => 100)
     expect(() => a.scroll(50)).not.toThrow()
     expect(b.el.scrollLeft).toBe(0)
+  })
+
+  it('when disabled, scrolling one does not move the others', () => {
+    const [a, b] = [scroller(), scroller()]
+    sync.register(a.el, () => 100)
+    sync.register(b.el, () => 100)
+    sync.setEnabled(false)
+    a.scroll(300)
+    expect(b.el.scrollLeft).toBe(0)
+    b.scroll(120) // and back, independently
+    expect(a.el.scrollLeft).toBe(300)
+  })
+
+  it('re-enabling aligns everything to the scroller the user moved last', () => {
+    const [a, b, c] = [scroller(), scroller(), scroller()]
+    sync.register(a.el, () => 100)
+    sync.register(b.el, () => 50)
+    sync.register(c.el, () => 200)
+    sync.setEnabled(false)
+    a.scroll(300)
+    b.scroll(100) // last one moved: day 2
+    sync.setEnabled(true)
+    expect(a.el.scrollLeft).toBe(200)
+    expect(c.el.scrollLeft).toBe(400)
+    expect(b.el.scrollLeft).toBe(100)
+  })
+
+  it('a scroller that mounts while sync is off keeps its own position', () => {
+    const [a, b] = [scroller(), scroller()]
+    sync.register(a.el, () => 100)
+    a.scroll(300)
+    sync.setEnabled(false)
+    sync.register(b.el, () => 100)
+    expect(b.el.scrollLeft).toBe(0)
+  })
+})
+
+describe('scroll sync setting', () => {
+  beforeEach(() => _resetScrollSyncSetting())
+
+  it('is on by default', () => {
+    expect(useScrollSyncSetting().enabled.value).toBe(true)
+  })
+
+  it('toggle flips it, persists it and drives the shared scroll group', () => {
+    const spy = vi.spyOn(scrollSync, 'setEnabled')
+    const { enabled, toggle } = useScrollSyncSetting()
+    toggle()
+    expect(enabled.value).toBe(false)
+    expect(localStorage.getItem('st-scroll-sync')).toBe('off')
+    expect(spy).toHaveBeenLastCalledWith(false)
+    toggle()
+    expect(enabled.value).toBe(true)
+    expect(spy).toHaveBeenLastCalledWith(true)
+    spy.mockRestore()
+  })
+
+  it('restores the stored preference', () => {
+    localStorage.setItem('st-scroll-sync', 'off')
+    _resetScrollSyncSetting()
+    expect(useScrollSyncSetting().enabled.value).toBe(false)
   })
 })

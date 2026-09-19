@@ -19,6 +19,10 @@ describe('WindGrid', () => {
     return w
   }
 
+  it('has the scroll sync toggle in its header', async () => {
+    expect((await mk()).find('button[role="switch"]').exists()).toBe(true)
+  })
+
   it('is ONE continuous table with the days side by side, scrolling horizontally as a whole', async () => {
     const w = await mk()
     expect(w.findAll('table')).toHaveLength(1)

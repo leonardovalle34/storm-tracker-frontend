@@ -15,6 +15,11 @@ export default {
     themeToggle: 'Toggle light/dark theme',
   },
   footer: { madeBy: 'Made by', company: 'Nexus Tecnologia' },
+  scrollSync: {
+    label: 'Sync scrolling',
+    tooltip:
+      'When on, scrolling forecast, wind or ocean moves all three together, always on the same day. Turn off to scroll each one independently.',
+  },
   map: {
     none: 'No location selected',
     choose: 'Choose location',
