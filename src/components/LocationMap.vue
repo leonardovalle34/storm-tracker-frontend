@@ -52,6 +52,13 @@ watch(location, (loc) => {
   fromMapClick = false
 })
 
+/** Re-measure after the container changed size (collapse/expand) and recenter on the current location. */
+function refresh() {
+  map?.invalidateSize()
+  if (location.value) map?.panTo([location.value.latitude, location.value.longitude])
+}
+defineExpose({ refresh })
+
 onBeforeUnmount(() => map?.remove())
 </script>
 

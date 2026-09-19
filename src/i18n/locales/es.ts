@@ -16,6 +16,8 @@ export default {
   },
   footer: { madeBy: 'Hecho por', company: 'Nexus Tecnologia' },
   map: {
+    change: 'Cambiar ubicación',
+    current: 'Ubicación seleccionada',
     title: 'Elige un lugar',
     label: 'Mapa satelital',
     hint: 'Haz clic en el mapa para seleccionar un lugar.',

@@ -15,7 +15,13 @@ export default {
     themeToggle: 'Toggle light/dark theme',
   },
   footer: { madeBy: 'Made by', company: 'Nexus Tecnologia' },
-  map: { title: 'Choose a location', label: 'Satellite map', hint: 'Click the map to select a location.' },
+  map: {
+    change: 'Change location',
+    current: 'Selected location',
+    title: 'Choose a location',
+    label: 'Satellite map',
+    hint: 'Click the map to select a location.',
+  },
   forecast: { title: '16-day forecast', precipitation: 'Precipitation', max: 'Max', min: 'Min' },
   weather: {
     clear: 'Clear sky',

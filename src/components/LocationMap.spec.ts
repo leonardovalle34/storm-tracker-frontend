@@ -10,6 +10,7 @@ const h = vi.hoisted(() => {
   map.on = vi.fn((ev: string, fn: (e: unknown) => void) => ((handlers[ev] = fn), map))
   map.remove = vi.fn()
   map.invalidateSize = vi.fn()
+  map.panTo = vi.fn(() => map)
   const marker = { addTo: vi.fn(() => marker), setLatLng: vi.fn(() => marker) }
   const tile = { addTo: vi.fn() }
   return { handlers, map, marker, tile }
@@ -57,6 +58,18 @@ describe('LocationMap', () => {
     await nextTick()
     expect(L.marker).toHaveBeenCalledWith([-23.9, -46.3], expect.anything())
     expect(h.map.setView).toHaveBeenLastCalledWith([-23.9, -46.3], expect.any(Number))
+  })
+
+  it('refresh() re-measures the map and recenters on the current location', async () => {
+    const w = mk()
+    h.map.invalidateSize.mockClear()
+    ;(w.vm as unknown as { refresh: () => void }).refresh()
+    expect(h.map.invalidateSize).toHaveBeenCalled()
+    expect(h.map.panTo).not.toHaveBeenCalled() // nothing selected yet
+    useSelectedLocation().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
+    await nextTick()
+    ;(w.vm as unknown as { refresh: () => void }).refresh()
+    expect(h.map.panTo).toHaveBeenCalledWith([-23.9, -46.3])
   })
 
   it('cleans up the map on unmount', () => {

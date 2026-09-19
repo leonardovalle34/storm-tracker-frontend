@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import ForecastCards from '@/components/ForecastCards.vue'
-import LocationMap from '@/components/LocationMap.vue'
+import LocationPicker from '@/components/LocationPicker.vue'
 import ModelMaps from '@/components/ModelMaps.vue'
 import OceanGrid from '@/components/OceanGrid.vue'
 import WindGrid from '@/components/WindGrid.vue'
@@ -27,11 +27,7 @@ const mapsCenter = computed(() => location.value ?? DEFAULT_CENTER)
   <div class="flex min-h-screen flex-col bg-page text-ink">
     <AppHeader />
     <main class="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-6">
-      <section data-section="map">
-        <h2 class="mb-3 text-xl font-semibold">{{ t('map.title') }}</h2>
-        <LocationMap />
-        <p v-if="location" class="mt-2 text-sm font-medium">📍 {{ location.name }}</p>
-      </section>
+      <section data-section="map"><LocationPicker /></section>
 
       <p v-if="!location" class="text-muted">{{ t('common.noLocation') }}</p>
       <p v-else-if="loading" class="text-muted" role="status">{{ t('common.loading') }}</p>

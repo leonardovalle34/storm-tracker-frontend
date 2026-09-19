@@ -8,7 +8,7 @@ const { t } = useI18n()
 <template>
   <footer class="border-t border-line bg-surface text-ink">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-      <img :src="fullLogo" :alt="t('app.title')" class="h-10 w-auto" />
+      <img :src="fullLogo" :alt="t('app.title')" class="h-18 w-auto" />
       <p class="text-sm text-muted">
         {{ t('footer.madeBy') }}
         <a
