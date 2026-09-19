@@ -43,7 +43,7 @@ const mapsCenter = computed(() => location.value ?? DEFAULT_CENTER)
         <section data-section="forecast"><ForecastCards :daily="forecast.daily" /></section>
         <section data-section="wind"><WindGrid :hourly="forecast.hourly" /></section>
         <section v-if="isCoastal && marine" data-section="ocean">
-          <OceanGrid :hourly="marine.hourly" />
+          <OceanGrid :hourly="marine.hourly" :forecast="forecast" />
         </section>
       </template>
 

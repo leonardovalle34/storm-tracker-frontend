@@ -47,6 +47,15 @@ export default {
     'Last Quarter': 'Last Quarter',
     'Waning Crescent': 'Waning Crescent',
   },
+  activities: {
+    title: 'Recommended activities',
+    surf: 'Surf',
+    kite: 'Kite/Windsurf',
+    swimming: 'Swimming',
+    diving: 'Diving',
+    level: { great: 'Great', good: 'Good', fair: 'Fair', poor: 'Poor' },
+    stormy: 'Not recommended — storm',
+  },
   ocean: {
     title: 'Ocean',
     swell: 'Swell (m)',

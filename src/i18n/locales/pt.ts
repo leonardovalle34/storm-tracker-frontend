@@ -51,6 +51,15 @@ export default {
     'Last Quarter': 'Quarto Minguante',
     'Waning Crescent': 'Minguante',
   },
+  activities: {
+    title: 'Atividades recomendadas',
+    surf: 'Surf',
+    kite: 'Kite/Windsurf',
+    swimming: 'Natação',
+    diving: 'Mergulho',
+    level: { great: 'Ótimo', good: 'Bom', fair: 'Razoável', poor: 'Ruim' },
+    stormy: 'Não recomendado — tempestade',
+  },
   ocean: {
     title: 'Oceano',
     swell: 'Ondulação (m)',

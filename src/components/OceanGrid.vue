@@ -1,20 +1,27 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MarineHourly } from '@/types/weather'
+import type { ForecastResponse, MarineHourly } from '@/types/weather'
+import { planDays } from '@/utils/activityPlanner'
 import { formatDay } from '@/utils/date'
 import { CELL, DAY_START, HOUR_COL_REM, HOURS_PER_DAY, LABEL_COL_REM, tableWidth } from '@/utils/gridStyles'
 import { buildMarineDays, firstGapIndex, type MarineColumn } from '@/utils/hourly'
+import ActivityPanel from './ActivityPanel.vue'
 import DayHeader from './DayHeader.vue'
+import MoonPhase from './MoonPhase.vue'
 import TideChart from './TideChart.vue'
 import WindDirection from './WindDirection.vue'
 
-const props = defineProps<{ hourly: MarineHourly }>()
+const props = defineProps<{ hourly: MarineHourly; forecast?: ForecastResponse | null }>()
 const { t, locale } = useI18n()
 
 const days = computed(() => buildMarineDays(props.hourly))
 // Every day of the response is drawn. Wave-model data thins out with distance, and where it ends varies
 // per location, so days from the first one with a null onward are flagged (never hidden).
+// Rule-based activity recommendations per day (needs wind from the forecast plus the marine data).
+const plans = computed(() =>
+  props.forecast ? planDays(props.forecast, { hourly: props.hourly }) : new Map(),
+)
 const gapFrom = computed(() => firstGapIndex(days.value))
 const isLongTerm = (i: number) => gapFrom.value !== -1 && i >= gapFrom.value
 
@@ -58,6 +65,7 @@ const label =
           <template #day="{ date, index }">
             <span class="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-sm">
               <span class="capitalize">{{ formatDay(date, locale) }}</span>
+              <MoonPhase :date="date" />
               <span
                 v-if="isLongTerm(index)"
                 data-testid="long-term"
@@ -67,6 +75,10 @@ const label =
                 <span aria-hidden="true">⏳</span>{{ t('ocean.longTerm') }}
               </span>
             </span>
+            <ActivityPanel
+              v-if="days[index].hasData && plans.get(date)"
+              :recommendations="plans.get(date)!"
+            />
           </template>
           <template #between>
             <!-- One tide curve per day, spanning that day's 7 columns, right above the hourly rows -->

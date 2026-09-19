@@ -21,6 +21,8 @@ export interface HourlyForecast {
   precipitation?: number[]
   wind_speed_10m: number[]
   wind_direction_10m: number[]
+  /** not sent by the backend yet; used per hour when present, else the daily code applies */
+  weather_code?: number[]
 }
 
 export interface ForecastResponse {

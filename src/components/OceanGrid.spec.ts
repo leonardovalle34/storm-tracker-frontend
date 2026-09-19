@@ -1,7 +1,7 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import { i18n, setLocale } from '@/i18n'
-import { makeMarine } from '@/test/fixtures'
+import { makeForecast, makeMarine } from '@/test/fixtures'
 import OceanGrid from './OceanGrid.vue'
 
 const dayList = (n: number) =>
@@ -9,6 +9,11 @@ const dayList = (n: number) =>
     const d = new Date(2026, 8, 19 + i)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
+
+vi.mock('@/services/api', () => ({
+  fetchMoonPhase: vi.fn().mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'Full Moon' }),
+  ApiError: class extends Error {},
+}))
 
 describe('OceanGrid', () => {
   setLocale('pt')
@@ -142,6 +147,53 @@ describe('OceanGrid', () => {
       expect(charts[15].find('svg').exists()).toBe(false)
       expect(charts[0].find('svg').exists()).toBe(true)
       expect(charts[0].find('[data-testid="no-data"]').exists()).toBe(false)
+    })
+  })
+
+  describe('recommended activities panel', () => {
+    const days = dayList(3)
+    const mkPanel = (opts: { forecast?: boolean; nullFromDay?: number } = {}) => {
+      const h = makeMarine(true, days).hourly
+      if (opts.nullFromDay !== undefined) {
+        for (const k of [
+          'wave_height',
+          'swell_wave_height',
+          'swell_wave_period',
+          'swell_wave_direction',
+          'sea_level_height_msl',
+          'sea_surface_temperature',
+        ] as const) {
+          for (let i = opts.nullFromDay * 24; i < h[k].length; i++) h[k][i] = null
+        }
+      }
+      return mount(OceanGrid, {
+        props: { hourly: h, forecast: opts.forecast === false ? null : makeForecast(days) },
+        global: { plugins: [i18n] },
+      })
+    }
+
+    it('sits in every day header, next to the moon phase, with the four activities', async () => {
+      const g = mkPanel()
+      await flushPromises()
+      const heads = g.findAll('[data-testid="day-head"]')
+      expect(heads).toHaveLength(3)
+      for (const h of heads) {
+        expect(h.findAll('[data-testid="activity-panel"]')).toHaveLength(1)
+        expect(h.findAll('[data-testid="activity"]')).toHaveLength(4)
+        expect(h.findAll('[data-testid="moon-phase"]')).toHaveLength(1)
+      }
+    })
+
+    it('is absent without forecast data', () => {
+      expect(mkPanel({ forecast: false }).find('[data-testid="activity-panel"]').exists()).toBe(false)
+    })
+
+    it('is absent for days with no marine data', () => {
+      const g = mkPanel({ nullFromDay: 1 })
+      expect(g.findAll('[data-testid="activity-panel"]')).toHaveLength(1)
+      expect(g.findAll('[data-testid="day-head"]')[2].find('[data-testid="activity-panel"]').exists()).toBe(
+        false,
+      )
     })
   })
 })
