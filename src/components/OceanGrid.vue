@@ -2,11 +2,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ForecastResponse, MarineHourly } from '@/types/weather'
-import { planDays } from '@/utils/activityPlanner'
+import { planDays, type Recommendation } from '@/utils/activityPlanner'
+import { ACTIVITIES } from '@/utils/activityScorer'
+import { clarityByDay } from '@/utils/waterClarity'
 import { formatDay } from '@/utils/date'
 import { CELL, DAY_START, HOUR_COL_REM, HOURS_PER_DAY, LABEL_COL_REM, tableWidth } from '@/utils/gridStyles'
 import { buildMarineDays, firstGapIndex, type MarineColumn } from '@/utils/hourly'
-import ActivityPanel from './ActivityPanel.vue'
+import ActivityCell from './ActivityCell.vue'
+import ConditionBadge from './ConditionBadge.vue'
 import DayHeader from './DayHeader.vue'
 import MoonPhase from './MoonPhase.vue'
 import TideChart from './TideChart.vue'
@@ -22,6 +25,15 @@ const days = computed(() => buildMarineDays(props.hourly))
 const plans = computed(() =>
   props.forecast ? planDays(props.forecast, { hourly: props.hourly }) : new Map(),
 )
+const clarity = computed(() =>
+  props.forecast ? clarityByDay(props.forecast, { hourly: props.hourly }) : new Map(),
+)
+const uvOf = (date: string): number | null => {
+  const d = props.forecast?.daily
+  const i = d?.time.indexOf(date) ?? -1
+  return i >= 0 ? (d?.uv_index_max?.[i] ?? null) : null
+}
+const ICONS = { surf: '🏄', kite: '🪁', swimming: '🏊', diving: '🤿' } as const
 const gapFrom = computed(() => firstGapIndex(days.value))
 const isLongTerm = (i: number) => gapFrom.value !== -1 && i >= gapFrom.value
 
@@ -81,6 +93,73 @@ const label =
             />
           </template>
           <template #between>
+            <template v-if="forecast">
+              <!-- Day summary: one full-width (7 column) cell per day instead of cramming it into the header -->
+              <tr data-testid="uv-row" class="border-t border-line">
+                <th scope="row" :class="label">☀️ {{ t('uv.label') }}</th>
+                <td
+                  v-for="day in days"
+                  :key="day.date"
+                  :colspan="HOURS_PER_DAY"
+                  data-testid="uv-cell"
+                  class="px-2 py-1"
+                  :class="DAY_START"
+                >
+                  <ConditionBadge v-if="uvOf(day.date) !== null" kind="uv" :value="uvOf(day.date)!" />
+                  <span v-else class="text-muted">–</span>
+                </td>
+              </tr>
+              <tr data-testid="clarity-row" class="border-t border-line">
+                <th scope="row" :class="label">🤿 {{ t('clarity.label') }}</th>
+                <td
+                  v-for="day in days"
+                  :key="day.date"
+                  :colspan="HOURS_PER_DAY"
+                  data-testid="clarity-cell"
+                  class="px-2 py-1"
+                  :class="DAY_START"
+                >
+                  <ConditionBadge
+                    v-if="clarity.get(day.date)"
+                    kind="clarity"
+                    :value="clarity.get(day.date)!.score"
+                  />
+                  <span v-else class="text-muted">–</span>
+                </td>
+              </tr>
+              <tr>
+                <td :colspan="1 + days.length * HOURS_PER_DAY" class="border-t border-line bg-surface-2 p-0">
+                  <div
+                    class="sticky left-0 w-max px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted"
+                  >
+                    {{ t('activities.title') }}
+                  </div>
+                </td>
+              </tr>
+              <tr
+                v-for="a in ACTIVITIES"
+                :key="a"
+                data-testid="activity-row"
+                :data-activity="a"
+                class="border-t border-line"
+              >
+                <th scope="row" :class="label">{{ ICONS[a] }} {{ t(`activities.${a}`) }}</th>
+                <td
+                  v-for="day in days"
+                  :key="day.date"
+                  :colspan="HOURS_PER_DAY"
+                  data-testid="activity-cell"
+                  class="px-2 py-1"
+                  :class="DAY_START"
+                >
+                  <ActivityCell
+                    v-if="day.hasData && plans.get(day.date)"
+                    :recommendation="plans.get(day.date)!.find((r: Recommendation) => r.activity === a)!"
+                  />
+                  <span v-else class="text-muted">–</span>
+                </td>
+              </tr>
+            </template>
             <!-- One tide curve per day, spanning that day's 7 columns, right above the hourly rows -->
             <tr>
               <th :class="label" scope="row">{{ t('ocean.tideChart') }}</th>

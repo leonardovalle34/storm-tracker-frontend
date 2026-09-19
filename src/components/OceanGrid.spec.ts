@@ -150,9 +150,9 @@ describe('OceanGrid', () => {
     })
   })
 
-  describe('recommended activities panel', () => {
+  describe('day summary rows: UV, water clarity and recommended activities', () => {
     const days = dayList(3)
-    const mkPanel = (opts: { forecast?: boolean; nullFromDay?: number } = {}) => {
+    const mkSummary = (opts: { forecast?: boolean; nullFromDay?: number } = {}) => {
       const h = makeMarine(true, days).hourly
       if (opts.nullFromDay !== undefined) {
         for (const k of [
@@ -166,34 +166,63 @@ describe('OceanGrid', () => {
           for (let i = opts.nullFromDay * 24; i < h[k].length; i++) h[k][i] = null
         }
       }
+      const forecast = makeForecast(days)
+      forecast.daily.uv_index_max = [3, 8, 11]
       return mount(OceanGrid, {
-        props: { hourly: h, forecast: opts.forecast === false ? null : makeForecast(days) },
+        props: { hourly: h, forecast: opts.forecast === false ? null : forecast },
         global: { plugins: [i18n] },
       })
     }
 
-    it('sits in every day header, next to the moon phase, with the four activities', async () => {
-      const g = mkPanel()
+    it('gives each activity its own table row with one roomy cell (7 columns wide) per day', async () => {
+      const g = mkSummary()
       await flushPromises()
-      const heads = g.findAll('[data-testid="day-head"]')
-      expect(heads).toHaveLength(3)
-      for (const h of heads) {
-        expect(h.findAll('[data-testid="activity-panel"]')).toHaveLength(1)
-        expect(h.findAll('[data-testid="activity"]')).toHaveLength(4)
+      const rows = g.findAll('[data-testid="activity-row"]')
+      expect(rows.map((r) => r.attributes('data-activity'))).toEqual(['surf', 'kite', 'swimming', 'diving'])
+      for (const r of rows) {
+        const cells = r.findAll('[data-testid="activity-cell"]')
+        expect(cells).toHaveLength(3)
+        expect(cells.every((c) => c.attributes('colspan') === '7')).toBe(true)
+        expect(r.find('th').text()).toMatch(/Surf|Kite\/Windsurf|Natação|Mergulho/)
+      }
+      expect(g.text()).toContain('Atividades recomendadas')
+    })
+
+    it('does not cram anything into the day header anymore (only date, moon and flag)', async () => {
+      const g = mkSummary()
+      await flushPromises()
+      for (const h of g.findAll('[data-testid="day-head"]')) {
+        expect(h.find('[data-testid="activity-badge"]').exists()).toBe(false)
         expect(h.findAll('[data-testid="moon-phase"]')).toHaveLength(1)
       }
     })
 
-    it('is absent without forecast data', () => {
-      expect(mkPanel({ forecast: false }).find('[data-testid="activity-panel"]').exists()).toBe(false)
+    it('has a UV row with the daily index and a water clarity row (estimate), per day', async () => {
+      const g = mkSummary()
+      await flushPromises()
+      const uv = g.findAll('[data-testid="uv-cell"]')
+      expect(uv).toHaveLength(3)
+      expect(uv.map((c) => c.text().match(/\d+/)?.[0])).toEqual(['3', '8', '11'])
+      expect(g.get('[data-testid="uv-row"] th').text()).toContain('Índice UV')
+      const clarity = g.findAll('[data-testid="clarity-cell"]')
+      expect(clarity).toHaveLength(3)
+      expect(g.get('[data-testid="clarity-row"] th').text()).toContain('Claridade da água')
+      expect(g.get('[data-testid="clarity-row"]').html()).toContain('Estimativa')
     })
 
-    it('is absent for days with no marine data', () => {
-      const g = mkPanel({ nullFromDay: 1 })
-      expect(g.findAll('[data-testid="activity-panel"]')).toHaveLength(1)
-      expect(g.findAll('[data-testid="day-head"]')[2].find('[data-testid="activity-panel"]').exists()).toBe(
-        false,
-      )
+    it('shows a dash instead of activities/clarity for days without marine data, keeping UV', () => {
+      const g = mkSummary({ nullFromDay: 1 })
+      const rows = g.findAll('[data-testid="activity-row"]')
+      expect(rows[0].findAll('[data-testid="activity-cell"]')[2].text()).toBe('–')
+      expect(g.findAll('[data-testid="clarity-cell"]')[2].text()).toBe('–')
+      expect(g.findAll('[data-testid="uv-cell"]')[2].text()).toContain('11')
+    })
+
+    it('has no activity or clarity rows without forecast data (UV needs the forecast too)', () => {
+      const g = mkSummary({ forecast: false })
+      expect(g.find('[data-testid="activity-row"]').exists()).toBe(false)
+      expect(g.find('[data-testid="clarity-row"]').exists()).toBe(false)
+      expect(g.find('[data-testid="uv-row"]').exists()).toBe(false)
     })
   })
 })

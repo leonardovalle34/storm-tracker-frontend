@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { DailyForecast } from '@/types/weather'
 import { formatDay } from '@/utils/date'
 import { describeWeather } from '@/utils/weatherCode'
+import ConditionBadge from './ConditionBadge.vue'
 
 const props = defineProps<{ daily: DailyForecast }>()
 const { t, locale } = useI18n()
@@ -16,6 +17,7 @@ const cards = computed(() =>
     min: Math.round(props.daily.temperature_2m_min[i]),
     rain: props.daily.precipitation_sum[i] ?? 0,
     weather: describeWeather(props.daily.weather_code?.[i]),
+    uv: props.daily.uv_index_max?.[i] ?? null,
   })),
 )
 </script>
@@ -43,6 +45,7 @@ const cards = computed(() =>
           {{ c.max }}° <span class="font-normal text-muted">{{ c.min }}°</span>
         </p>
         <p class="text-xs text-muted" :title="t('forecast.precipitation')">💧 {{ c.rain }} mm</p>
+        <p v-if="c.uv !== null" data-testid="uv" class="mt-0.5"><ConditionBadge kind="uv" :value="c.uv" /></p>
       </article>
     </div>
   </div>

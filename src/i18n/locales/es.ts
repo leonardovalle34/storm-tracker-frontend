@@ -60,6 +60,15 @@ export default {
     level: { great: 'Excelente', good: 'Bueno', fair: 'Regular', poor: 'Malo' },
     stormy: 'No recomendado — tormenta',
   },
+  uv: {
+    label: 'Índice UV',
+    level: { low: 'Bajo', moderate: 'Moderado', high: 'Alto', veryHigh: 'Muy alto', extreme: 'Extremo' },
+  },
+  clarity: {
+    label: 'Claridad del agua',
+    estimate: 'Estimación por olas, viento y lluvia reciente — no es una medición',
+    level: { excellent: 'Excelente', good: 'Buena', moderate: 'Regular', poor: 'Baja' },
+  },
   ocean: {
     title: 'Océano',
     swell: 'Oleaje (m)',

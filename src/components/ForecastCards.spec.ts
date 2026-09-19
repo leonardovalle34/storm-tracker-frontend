@@ -29,6 +29,21 @@ describe('ForecastCards', () => {
     expect(m.findAll('[data-testid="weather-icon"]').map((i) => i.text())).toEqual(['☀️', '⛈️', '❄️'])
   })
 
+  it('shows the UV index (max of the day) with its level', () => {
+    const d = { ...daily, uv_index_max: [2, 8.4, 12] }
+    const m = mount(ForecastCards, { props: { daily: d }, global: { plugins: [i18n] } })
+    const uv = m.findAll('[data-testid="uv"]')
+    expect(uv).toHaveLength(3)
+    expect(uv[0].text()).toContain('UV 2')
+    expect(uv[1].text()).toContain('UV 8')
+    expect(uv[1].get('[data-testid="badge"]').classes()).toContain('bg-wind-extreme')
+    expect(uv[2].text()).toContain('Extremo')
+  })
+
+  it('omits the UV line when the API has no value for the day', () => {
+    expect(w.find('[data-testid="uv"]').exists()).toBe(false)
+  })
+
   it('has a translated title', () => {
     expect(w.text()).toContain('Previsão de 16 dias')
   })
