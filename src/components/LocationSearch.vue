@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useLocationSearch } from '@/composables/useLocationSearch'
 import { useSelectedLocation } from '@/composables/useSelectedLocation'
 import type { Location } from '@/types/weather'
 
 const { t } = useI18n()
-const { select } = useSelectedLocation()
+const { location, select } = useSelectedLocation()
 
 const query = ref('')
 const open = ref(false)
@@ -20,6 +20,17 @@ function onInput(e: Event) {
   open.value = true
   active.value = -1
 }
+
+// A place chosen elsewhere (map click / geolocation, whose name is just coordinates) makes whatever
+// is written here stale, so clear it. A pick from this box sets query to the same name and is kept.
+watch(location, (loc) => {
+  if (!loc || loc.name === query.value || query.value === '') return
+  skipNext() // only when the value really changes, otherwise the flag would swallow the next keystroke
+  query.value = ''
+  clear()
+  open.value = false
+  active.value = -1
+})
 
 function pick(l: Location) {
   skipNext()

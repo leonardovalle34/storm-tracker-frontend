@@ -45,6 +45,44 @@ describe('LocationSearch', () => {
     expect(geocode).toHaveBeenCalledTimes(1)
   })
 
+  it('clears the typed/picked name when the place is then chosen on the map (coordinates)', async () => {
+    const w = mk()
+    await type(w, 'sant')
+    await w.findAll('[role="option"]')[0].trigger('click')
+    expect((w.get('input').element as HTMLInputElement).value).toBe('Santos, SP')
+    useSelectedLocation().selectCoords(-10.1234, -20.5678)
+    await flushPromises()
+    expect((w.get('input').element as HTMLInputElement).value).toBe('')
+    expect(w.findAll('[role="option"]')).toHaveLength(0)
+  })
+
+  it('also clears half-typed text on a map click, without firing a search', async () => {
+    const w = mk()
+    await w.get('input').setValue('sa')
+    useSelectedLocation().selectCoords(1, 2)
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect((w.get('input').element as HTMLInputElement).value).toBe('')
+    expect(geocode).not.toHaveBeenCalled()
+  })
+
+  it('keeps searching normally after a map click cleared the field (no stuck skip flag)', async () => {
+    const w = mk()
+    useSelectedLocation().selectCoords(1, 2) // input already empty: nothing to clear
+    await flushPromises()
+    await type(w, 'santos')
+    expect(geocode).toHaveBeenCalledTimes(1)
+    expect(w.findAll('[role="option"]')).toHaveLength(2)
+  })
+
+  it('keeps the name when the location came from this search box', async () => {
+    const w = mk()
+    await type(w, 'sant')
+    await w.findAll('[role="option"]')[1].trigger('click')
+    await flushPromises()
+    expect((w.get('input').element as HTMLInputElement).value).toBe('Santo André, SP')
+  })
+
   it('shows a no-results message', async () => {
     geocode.mockResolvedValue([])
     const w = mk()
