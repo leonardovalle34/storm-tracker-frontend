@@ -82,19 +82,59 @@ describe('OceanGrid', () => {
     expect(w.findAll('[data-testid="tide-chart-svg"]')).toHaveLength(2)
   })
 
-  describe('long-term reliability flag', () => {
-    const long = mount(OceanGrid, {
-      props: { hourly: makeMarine(true, dayList(16)).hourly },
-      global: { plugins: [i18n] },
+  describe('reliability flag is detected from the data, not fixed at day 8', () => {
+    const grid = (nDays: number, nullFrom?: number) => {
+      const h = makeMarine(true, dayList(nDays)).hourly
+      if (nullFrom !== undefined) {
+        for (const k of [
+          'wave_height',
+          'swell_wave_height',
+          'swell_wave_period',
+          'swell_wave_direction',
+          'sea_level_height_msl',
+          'sea_surface_temperature',
+        ] as const) {
+          for (let i = nullFrom; i < h[k].length; i++) h[k][i] = null
+        }
+      }
+      return mount(OceanGrid, { props: { hourly: h }, global: { plugins: [i18n] } })
+    }
+    const flags = (g: ReturnType<typeof grid>) =>
+      g.findAll('[data-testid="day-head"]').map((h) => h.find('[data-testid="long-term"]').exists())
+
+    it('renders ALL days of the response, including ones that are entirely null', () => {
+      const g = grid(16, 24 * 8 + 21)
+      expect(g.findAll('[data-testid="day-head"]')).toHaveLength(16)
+      expect(g.findAll('[data-testid="hour-head"]')).toHaveLength(112)
+      expect(g.findAll('[data-testid="swell-cell"]')).toHaveLength(112)
+      expect(g.findAll('[data-testid="tide-chart"]')).toHaveLength(16)
     })
-    it('flags only days 8 to 16 in their day header, keeping their data', () => {
-      const heads = long.findAll('[data-testid="day-head"]')
-      expect(heads).toHaveLength(16)
-      const flagged = heads.map((h) => h.find('[data-testid="long-term"]').exists())
-      expect(flagged.slice(0, 7).every((f) => !f)).toBe(true)
-      expect(flagged.slice(7).every((f) => f)).toBe(true)
-      expect(heads[7].text()).toContain('Estimativa de longo prazo')
-      expect(long.findAll('[data-testid="swell-cell"]')).toHaveLength(16 * 7)
+
+    it('flags from the first day with a null (partial day included), reliable before it', () => {
+      const f = flags(grid(16, 24 * 8 + 21))
+      expect(f.slice(0, 8).every((x) => !x)).toBe(true)
+      expect(f.slice(8).every((x) => x)).toBe(true)
+    })
+
+    it('follows the data: a location whose nulls start at day 4 is flagged from day 4', () => {
+      const f = flags(grid(16, 24 * 3))
+      expect(f.findIndex((x) => x)).toBe(3)
+    })
+
+    it('flags nothing when every day has data (no fixed threshold)', () => {
+      expect(flags(grid(16)).some((x) => x)).toBe(false)
+    })
+
+    it('null cells are "no data available" (dash + title), and empty days say so in the chart slot', () => {
+      const g = grid(16, 24 * 8 + 21)
+      const last = g.findAll('[data-testid="swell-cell"]')[111]
+      expect(last.text()).toBe('–')
+      expect(last.attributes('title')).toBe('Sem dado disponível')
+      const charts = g.findAll('[data-testid="tide-chart"]')
+      expect(charts[15].find('[data-testid="no-data"]').text()).toBe('Sem dados')
+      expect(charts[15].find('svg').exists()).toBe(false)
+      expect(charts[0].find('svg').exists()).toBe(true)
+      expect(charts[0].find('[data-testid="no-data"]').exists()).toBe(false)
     })
   })
 })

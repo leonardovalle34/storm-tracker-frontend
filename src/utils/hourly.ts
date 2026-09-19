@@ -50,7 +50,14 @@ export interface MarineColumn {
 export interface MarineDay extends Day<MarineColumn> {
   /** Tide (sea_level_height_msl) for every hour of the day, indexed by hour 0..23; null where missing. */
   tideSeries: (number | null)[]
+  /** Any hour of the day has a null sea level or swell height. */
+  hasGaps: boolean
+  /** At least one hour of the day has a sea level or swell height value. */
+  hasData: boolean
 }
+
+/** Index of the first day with missing data (per location, from the response itself); -1 if none. */
+export const firstGapIndex = (days: MarineDay[]): number => days.findIndex((d) => d.hasGaps)
 
 export function buildMarineDays(h: MarineHourly): MarineDay[] {
   const tideByDate = new Map<string, (number | null)[]>()
@@ -66,7 +73,17 @@ export function buildMarineDays(h: MarineHourly): MarineDay[] {
     swellDir: h.swell_wave_direction[i] ?? null,
     tide: h.sea_level_height_msl[i] ?? null,
     waterTemp: h.sea_surface_temperature[i] ?? null,
-  })).map((d) => ({ ...d, tideSeries: tideByDate.get(d.date)! }))
+  })).map((d) => {
+    const idx = h.time.flatMap((t, i) => (t.startsWith(d.date) ? [i] : []))
+    const missing = (i: number) => h.sea_level_height_msl[i] == null || h.swell_wave_height[i] == null
+    const present = (i: number) => h.sea_level_height_msl[i] != null || h.swell_wave_height[i] != null
+    return {
+      ...d,
+      tideSeries: tideByDate.get(d.date)!,
+      hasGaps: idx.some(missing),
+      hasData: idx.some(present),
+    }
+  })
 }
 
 /** Coastal iff the API returned any non-null wave_height — no geographic logic. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HOURS, buildMarineDays, buildWindDays, hasWaveData } from './hourly'
+import { HOURS, buildMarineDays, buildWindDays, firstGapIndex, hasWaveData } from './hourly'
 
 const times = (days: string[]) =>
   days.flatMap((d) => Array.from({ length: 24 }, (_, h) => `${d}T${String(h).padStart(2, '0')}:00`))
@@ -80,5 +80,42 @@ describe('hourly utils', () => {
         sea_surface_temperature: [],
       }),
     ).toBe(true)
+  })
+
+  describe('marine data gaps', () => {
+    const mk = (nDays: number, nullFrom?: number) => {
+      const dates = Array.from({ length: nDays }, (_, i) => `2026-09-${String(19 + i).padStart(2, '0')}`)
+      const time = times(dates)
+      const val = (v: number) => time.map((_, i) => (nullFrom !== undefined && i >= nullFrom ? null : v))
+      return {
+        time,
+        wave_height: val(1),
+        swell_wave_height: val(1.5),
+        swell_wave_period: val(10),
+        swell_wave_direction: val(180),
+        sea_level_height_msl: val(0.3),
+        sea_surface_temperature: val(22),
+      }
+    }
+
+    it('never drops a day: all days in the response are returned, including all-null ones', () => {
+      const days = buildMarineDays(mk(16, 24 * 8 + 21)) // like the real API: last value at day 9, 20h
+      expect(days).toHaveLength(16)
+      expect(days.every((d) => d.columns.length === 7)).toBe(true)
+    })
+
+    it('flags hasData / hasGaps per day from sea level and swell height', () => {
+      const days = buildMarineDays(mk(12, 24 * 8 + 21))
+      expect(days[7]).toMatchObject({ hasData: true, hasGaps: false })
+      expect(days[8]).toMatchObject({ hasData: true, hasGaps: true }) // 9th day: data until 20h
+      expect(days[11]).toMatchObject({ hasData: false, hasGaps: true })
+    })
+
+    it('firstGapIndex is the first day with any null, per location (dynamic)', () => {
+      expect(firstGapIndex(buildMarineDays(mk(16)))).toBe(-1)
+      expect(firstGapIndex(buildMarineDays(mk(16, 24 * 8 + 21)))).toBe(8)
+      expect(firstGapIndex(buildMarineDays(mk(16, 24 * 3)))).toBe(3)
+      expect(firstGapIndex(buildMarineDays(mk(16, 24 * 3 + 5)))).toBe(3)
+    })
   })
 })

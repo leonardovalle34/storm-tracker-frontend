@@ -59,7 +59,9 @@ export default {
     period: 'Período (s)',
     swellDir: 'Direção da ondulação',
     longTerm: 'Estimativa de longo prazo',
-    longTermHint: 'A previsão de ondas é menos confiável após o 7º dia',
+    longTermHint: 'Estimativa de longo prazo: os dados completos do modelo acabam a partir deste dia',
+    noData: 'Sem dados',
+    noDataCell: 'Sem dado disponível',
     tideChart: 'Curva de maré',
   },
   models: {

@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { MarineHourly } from '@/types/weather'
 import { formatDay } from '@/utils/date'
 import { CELL, DAY_START, HOUR_COL_REM, HOURS_PER_DAY, LABEL_COL_REM, tableWidth } from '@/utils/gridStyles'
-import { buildMarineDays, type MarineColumn } from '@/utils/hourly'
+import { buildMarineDays, firstGapIndex, type MarineColumn } from '@/utils/hourly'
 import DayHeader from './DayHeader.vue'
 import TideChart from './TideChart.vue'
 import WindDirection from './WindDirection.vue'
@@ -13,26 +13,33 @@ const props = defineProps<{ hourly: MarineHourly }>()
 const { t, locale } = useI18n()
 
 const days = computed(() => buildMarineDays(props.hourly))
-// Wave-model reliability drops sharply after ~day 7: days 8+ are flagged, never hidden.
-const LONG_TERM_FROM = 7
+// Every day of the response is drawn. Wave-model data thins out with distance, and where it ends varies
+// per location, so days from the first one with a null onward are flagged (never hidden).
+const gapFrom = computed(() => firstGapIndex(days.value))
+const isLongTerm = (i: number) => gapFrom.value !== -1 && i >= gapFrom.value
 
 const columns = computed(() =>
   days.value.flatMap((d) => d.columns.map((c, i) => ({ ...c, date: d.date, first: i === 0 }))),
 )
 type Col = MarineColumn & { first: boolean }
 
-const round = (v: number | null, digits: number) =>
-  v === null ? '–' : (Math.round(v * 10 ** digits) / 10 ** digits).toFixed(digits)
+const fixed = (digits: number) => (v: number) => (Math.round(v * 10 ** digits) / 10 ** digits).toFixed(digits)
 // tide keeps up to 2 decimals without trailing zeros noise ("0.25", "1")
-const tide = (v: number | null) => (v === null ? '–' : String(Math.round(v * 100) / 100))
+const tideFmt = (v: number) => String(Math.round(v * 100) / 100)
 
-const rows = [
-  { id: 'swell', label: 'ocean.swell', text: (c: Col) => round(c.swell, 1) },
-  { id: 'period', label: 'ocean.period', text: (c: Col) => round(c.period, 1) },
-  { id: 'swelldir', label: 'ocean.swellDir', dir: (c: Col) => c.swellDir },
-  { id: 'tide', label: 'ocean.tide', text: (c: Col) => tide(c.tide) },
-  { id: 'temp', label: 'ocean.waterTemp', text: (c: Col) => round(c.waterTemp, 1) },
-] as const
+interface Row {
+  id: string
+  label: string
+  value: (c: Col) => number | null
+  fmt?: (v: number) => string // absent => direction cell (arrow + cardinal)
+}
+const rows: Row[] = [
+  { id: 'swell', label: 'ocean.swell', value: (c) => c.swell, fmt: fixed(1) },
+  { id: 'period', label: 'ocean.period', value: (c) => c.period, fmt: fixed(1) },
+  { id: 'swelldir', label: 'ocean.swellDir', value: (c) => c.swellDir },
+  { id: 'tide', label: 'ocean.tide', value: (c) => c.tide, fmt: tideFmt },
+  { id: 'temp', label: 'ocean.waterTemp', value: (c) => c.waterTemp, fmt: fixed(1) },
+]
 const label =
   'sticky left-0 z-10 border-r border-line bg-surface px-2 text-left text-xs font-normal text-muted'
 </script>
@@ -51,7 +58,7 @@ const label =
             <span class="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-sm">
               <span class="capitalize">{{ formatDay(date, locale) }}</span>
               <span
-                v-if="index >= LONG_TERM_FROM"
+                v-if="isLongTerm(index)"
                 data-testid="long-term"
                 :title="t('ocean.longTermHint')"
                 class="inline-flex items-center gap-1 rounded-full border border-line px-1.5 text-[10px] font-normal leading-4 text-muted"
@@ -72,7 +79,10 @@ const label =
                 class="p-0"
                 :class="DAY_START"
               >
-                <TideChart :series="day.tideSeries" />
+                <TideChart v-if="day.hasData" :series="day.tideSeries" />
+                <p v-else data-testid="no-data" class="py-6 text-center text-xs text-muted">
+                  {{ t('ocean.noData') }}
+                </p>
               </td>
             </tr>
           </template>
@@ -84,11 +94,12 @@ const label =
               v-for="c in columns"
               :key="`${c.date}-${c.hour}`"
               :data-testid="`${r.id}-cell`"
+              :title="r.value(c) === null ? t('ocean.noDataCell') : undefined"
               class="bg-surface-2 text-ink"
-              :class="[CELL, 'dir' in r && 'h-auto py-1', c.first && DAY_START]"
+              :class="[CELL, !r.fmt && 'h-auto py-1', c.first && DAY_START]"
             >
-              <WindDirection v-if="'dir' in r" :direction="r.dir(c)" />
-              <template v-else>{{ r.text(c) }}</template>
+              <WindDirection v-if="!r.fmt" :direction="r.value(c)" />
+              <template v-else>{{ r.value(c) === null ? '–' : r.fmt(r.value(c)!) }}</template>
             </td>
           </tr>
         </tbody>

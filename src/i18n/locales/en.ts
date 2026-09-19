@@ -55,7 +55,9 @@ export default {
     period: 'Period (s)',
     swellDir: 'Swell direction',
     longTerm: 'Long-term estimate',
-    longTermHint: 'Wave forecasts are less reliable after day 7',
+    longTermHint: 'Long-term estimate: complete model data ends from this day on',
+    noData: 'No data',
+    noDataCell: 'No data available',
     tideChart: 'Tide curve',
   },
   models: {
