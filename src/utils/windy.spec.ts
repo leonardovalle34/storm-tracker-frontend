@@ -17,6 +17,11 @@ describe('windyUrl', () => {
     expect(new URL(windyUrl(loc, o)).searchParams.get('overlay')).toBe(o)
   })
 
+  it('shows temperatures in Celsius by default and in Fahrenheit when asked', () => {
+    expect(new URL(windyUrl(loc, 'temp')).searchParams.get('metricTemp')).toBe('°C')
+    expect(new URL(windyUrl(loc, 'temp', false, 'F')).searchParams.get('metricTemp')).toBe('°F')
+  })
+
   it('expanded version shows the menu and uses a higher zoom', () => {
     const small = new URL(windyUrl(loc, 'temp'))
     const big = new URL(windyUrl(loc, 'temp', true))

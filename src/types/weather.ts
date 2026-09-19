@@ -11,6 +11,8 @@ export interface DailyForecast {
   precipitation_sum: number[]
   weather_code: number[]
   uv_index_max?: number[]
+  /** "feels like" daily max in °C; optional until the backend sends it */
+  apparent_temperature_max?: (number | null)[]
   sunrise?: string[]
   sunset?: string[]
 }
@@ -25,9 +27,17 @@ export interface HourlyForecast {
   weather_code?: number[]
 }
 
+/** Conditions right now. Optional: backends that predate it simply omit it. */
+export interface CurrentWeather {
+  temperature_2m?: number | null
+  weather_code?: number | null
+  wind_speed_10m?: number | null // knots, like the hourly wind
+}
+
 export interface ForecastResponse {
   daily: DailyForecast
   hourly: HourlyForecast
+  current?: CurrentWeather | null
 }
 
 export interface MarineHourly {
