@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findExtrema, smoothPath } from './tide'
+import { findExtrema, labelWidth, placeLabels, smoothPath, type LabelBox } from './tide'
 
 describe('findExtrema', () => {
   it('finds local peaks and valleys of a known series', () => {
@@ -56,5 +56,76 @@ describe('smoothPath', () => {
 
   it('returns an empty path for fewer than 2 points', () => {
     expect(smoothPath([{ x: 1, y: 1 }])).toBe('')
+  })
+})
+
+const overlap = (a: LabelBox, b: LabelBox) =>
+  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+
+const FRAME = { width: 700, height: 170, fontSize: 26 }
+const mark = (index: number, x: number, y: number, value: number, type: 'peak' | 'valley') => ({
+  index,
+  x,
+  y,
+  value,
+  type,
+  text: `${value.toFixed(2)} m`,
+})
+
+describe('placeLabels', () => {
+  it('labels every extremum when there is room', () => {
+    const marks = [mark(3, 50, 60, 1, 'peak'), mark(9, 250, 100, -1, 'valley'), mark(15, 450, 60, 1, 'peak')]
+    expect(placeLabels(marks, FRAME).map((l) => l.index)).toEqual([3, 9, 15])
+  })
+
+  it('never lets two labels overlap when extrema are close (peak followed by a nearby valley)', () => {
+    const marks = [
+      mark(15, 400, 60, 1.2, 'peak'),
+      mark(18, 500, 70, 0.9, 'valley'),
+      mark(20, 567, 66, 1.1, 'peak'),
+      mark(22, 633, 72, 0.8, 'valley'),
+    ]
+    const placed = placeLabels(marks, FRAME)
+    expect(placed.length).toBeGreaterThan(0)
+    for (let i = 0; i < placed.length; i++)
+      for (let j = i + 1; j < placed.length; j++) expect(overlap(placed[i].box, placed[j].box)).toBe(false)
+  })
+
+  it('always keeps the absolute maximum and minimum of the day labeled', () => {
+    const marks = [
+      mark(3, 50, 90, 0.9, 'peak'),
+      mark(5, 117, 92, 0.7, 'valley'),
+      mark(7, 183, 40, 1.8, 'peak'), // absolute max
+      mark(9, 250, 100, -0.4, 'valley'), // absolute min
+      mark(11, 317, 60, 1.0, 'peak'),
+    ]
+    const ids = placeLabels(marks, FRAME).map((l) => l.index)
+    expect(ids).toContain(7)
+    expect(ids).toContain(9)
+  })
+
+  it('keeps every label inside the frame (x and y) even at the edges', () => {
+    const marks = [mark(1, 8, 20, 2, 'peak'), mark(23, 695, 150, -1, 'valley')]
+    for (const l of placeLabels(marks, FRAME)) {
+      expect(l.box.left).toBeGreaterThanOrEqual(0)
+      expect(l.box.right).toBeLessThanOrEqual(FRAME.width)
+      expect(l.box.top).toBeGreaterThanOrEqual(0)
+      expect(l.box.bottom).toBeLessThanOrEqual(FRAME.height)
+    }
+  })
+
+  it('defaults to above the dot and moves below when above is taken', () => {
+    const [a] = placeLabels([mark(3, 300, 80, 1, 'peak')], FRAME)
+    expect(a.y).toBeLessThan(80)
+    const two = placeLabels([mark(3, 300, 80, 1.5, 'peak'), mark(4, 320, 80, 1.4, 'peak')], FRAME)
+    const byIdx = Object.fromEntries(two.map((l) => [l.index, l]))
+    // second label (lower priority) is either relocated below its dot or dropped, never on top of the first
+    if (byIdx[4]) expect(byIdx[4].y).toBeGreaterThan(80)
+    expect(two.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('estimates label width from text length and font size', () => {
+    expect(labelWidth('1.00 m', 26)).toBeGreaterThan(labelWidth('1 m', 26))
+    expect(labelWidth('1.00 m', 30)).toBeGreaterThan(labelWidth('1.00 m', 20))
   })
 })

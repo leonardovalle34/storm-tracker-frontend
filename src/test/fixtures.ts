@@ -28,6 +28,8 @@ export function makeMarine(coastal: boolean, days = ['2026-09-19']): MarineRespo
       time,
       wave_height: time.map(() => (coastal ? 1.2 : null)),
       swell_wave_height: time.map(() => 1.5),
+      swell_wave_period: time.map(() => 12.3),
+      swell_wave_direction: time.map(() => 225),
       sea_level_height_msl: time.map(() => 0.25),
       sea_surface_temperature: time.map(() => 22.4),
     },

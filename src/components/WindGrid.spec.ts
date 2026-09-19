@@ -19,49 +19,69 @@ describe('WindGrid', () => {
     return w
   }
 
-  it('renders a block per day with 7 hour columns (3h..21h), each day scrolling horizontally', async () => {
+  it('is ONE continuous table with the days side by side, scrolling horizontally as a whole', async () => {
     const w = await mk()
-    const days = w.findAll('[data-testid="wind-day"]')
-    expect(days).toHaveLength(2)
-    expect(days[0].findAll('[data-testid="hour-head"]').map((c) => c.text())).toEqual([
-      '3h',
-      '6h',
-      '9h',
-      '12h',
-      '15h',
-      '18h',
-      '21h',
-    ])
-    expect(days[0].get('[data-testid="wind-scroll"]').classes()).toContain('overflow-x-auto')
+    expect(w.findAll('table')).toHaveLength(1)
+    expect(w.findAll('[data-testid="wind-day"]')).toHaveLength(0) // no stacked per-day cards
+    expect(w.get('[data-testid="wind-scroll"]').classes()).toContain('overflow-x-auto')
+    expect(w.get('[data-testid="wind-scroll"]').find('table').exists()).toBe(true)
   })
 
-  it('shows the moon phase once per day header, not per hour column', async () => {
+  it('groups the 7 hour columns of each day under one day header', async () => {
     const w = await mk()
-    const days = w.findAll('[data-testid="wind-day"]')
-    for (const d of days) {
-      expect(d.findAll('[data-testid="moon-phase"]')).toHaveLength(1)
-      expect(d.get('header').find('[data-testid="moon-phase"]').exists()).toBe(true)
+    const heads = w.findAll('[data-testid="day-head"]')
+    expect(heads).toHaveLength(2)
+    expect(heads.every((h) => h.attributes('colspan') === '7')).toBe(true)
+    const hours = w.findAll('[data-testid="hour-head"]')
+    expect(hours).toHaveLength(14)
+    expect(hours.slice(0, 7).map((c) => c.text())).toEqual(['3h', '6h', '9h', '12h', '15h', '18h', '21h'])
+  })
+
+  it('draws a stronger vertical divider at the start of each day only', async () => {
+    const w = await mk()
+    const hours = w.findAll('[data-testid="hour-head"]')
+    const cells = w.findAll('[data-testid="speed-cell"]')
+    for (const list of [hours, cells]) {
+      list.forEach((c, i) => expect(c.classes().includes('border-l-2'), `col ${i}`).toBe(i % 7 === 0))
+    }
+    expect(w.findAll('[data-testid="day-head"]').every((h) => h.classes().includes('border-l-2'))).toBe(true)
+  })
+
+  it('shows the moon phase once per day, inside the day header, not per hour column', async () => {
+    const w = await mk()
+    const moons = w.findAll('[data-testid="moon-phase"]')
+    expect(moons).toHaveLength(2)
+    for (const h of w.findAll('[data-testid="day-head"]')) {
+      expect(h.findAll('[data-testid="moon-phase"]')).toHaveLength(1)
     }
     expect(api.fetchMoonPhase).toHaveBeenCalledTimes(2)
   })
 
-  it('colors speed cells by intensity with theme token classes (kt)', async () => {
+  it('colors compact speed cells by intensity with theme token classes (kt)', async () => {
     const w = await mk()
-    const cells = w.findAll('[data-testid="wind-day"]')[0].findAll('[data-testid="speed-cell"]')
+    const cells = w.findAll('[data-testid="speed-cell"]')
+    expect(cells).toHaveLength(14)
     // fixtures (knots): 3 calm, 13 moderate, 22 strong, 32 extreme
     expect(cells[0].text()).toBe('3')
     expect(cells[0].classes()).toEqual(expect.arrayContaining(['bg-wind-calm', 'text-wind-calm-fg']))
     expect(cells[1].classes()).toContain('bg-wind-moderate')
     expect(cells[2].classes()).toContain('bg-wind-strong')
     expect(cells[3].classes()).toContain('bg-wind-extreme')
+    expect(cells[0].classes()).toContain('text-xs') // dense
   })
 
-  it('direction arrows rotate downwind and inherit color via currentColor only', async () => {
+  it('direction cells show the rotated arrow AND the cardinal letters', async () => {
     const w = await mk()
-    const cell = w.findAll('[data-testid="wind-day"]')[0].findAll('[data-testid="dir-cell"]')[0]
-    const arrow = cell.get('svg')
-    // hour 3 => direction 30 => rotate(210deg)
-    expect(arrow.attributes('style')).toContain('rotate(210deg)')
+    const cells = w.findAll('[data-testid="dir-cell"]')
+    // fixtures: hour 3 => 30° (NE, arrow rotate(210deg)), hour 9 => 90° (E)
+    expect(cells[0].get('svg').attributes('style')).toContain('rotate(210deg)')
+    expect(cells[0].get('[data-testid="cardinal"]').text()).toBe('NE')
+    expect(cells[2].get('[data-testid="cardinal"]').text()).toBe('E')
+  })
+
+  it('arrows inherit color via currentColor only', async () => {
+    const w = await mk()
+    const cell = w.findAll('[data-testid="dir-cell"]')[0]
     expect(cell.html()).toContain('currentColor')
     expect(cell.html()).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgb\(|hsl\(/)
     expect(cell.classes().some((c) => c.startsWith('text-wind-'))).toBe(true)

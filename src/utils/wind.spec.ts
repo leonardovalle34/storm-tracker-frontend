@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { arrowRotation, windLevel } from './wind'
+import { arrowRotation, cardinal, windLevel } from './wind'
 
 describe('wind utils', () => {
   it.each([
@@ -20,5 +20,25 @@ describe('wind utils', () => {
     expect(arrowRotation(90)).toBe(270)
     expect(arrowRotation(270)).toBe(90)
     expect(arrowRotation(180)).toBe(0)
+  })
+
+  it.each([
+    [0, 'N'],
+    [22.4, 'N'],
+    [22.5, 'NE'],
+    [45, 'NE'],
+    [90, 'E'],
+    [135, 'SE'],
+    [180, 'S'],
+    [225, 'SW'],
+    [270, 'W'],
+    [315, 'NW'],
+    [337.4, 'NW'],
+    [337.5, 'N'],
+    [360, 'N'],
+    [-45, 'NW'],
+    [405, 'NE'],
+  ])('%s° is %s', (deg, sigla) => {
+    expect(cardinal(deg)).toBe(sigla)
   })
 })

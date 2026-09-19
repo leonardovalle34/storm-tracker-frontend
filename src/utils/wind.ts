@@ -10,3 +10,9 @@ export function windLevel(knots: number): WindLevel {
 
 /** wind_direction_10m is where the wind comes FROM; the arrow points downwind. */
 export const arrowRotation = (fromDeg: number): number => (((fromDeg + 180) % 360) + 360) % 360
+
+const CARDINALS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
+
+/** 8-point compass letters for a bearing in degrees (0-360, any real number). */
+export const cardinal = (deg: number): (typeof CARDINALS)[number] =>
+  CARDINALS[((Math.round(deg / 45) % 8) + 8) % 8]

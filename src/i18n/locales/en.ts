@@ -52,6 +52,8 @@ export default {
     swell: 'Swell (m)',
     tide: 'Tide (m)',
     waterTemp: 'Water temp (°C)',
+    period: 'Period (s)',
+    swellDir: 'Swell direction',
     longTerm: 'Long-term estimate',
     longTermHint: 'Wave forecasts are less reliable after day 7',
     tideChart: 'Tide curve',

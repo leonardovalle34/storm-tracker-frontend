@@ -42,3 +42,72 @@ export function smoothPath(pts: Point[]): string {
   }
   return d
 }
+
+export interface LabelInput {
+  index: number
+  x: number
+  y: number
+  value: number
+  type: 'peak' | 'valley'
+  text: string
+}
+
+export interface LabelBox {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+export interface PlacedLabel {
+  index: number
+  text: string
+  x: number
+  /** text baseline */
+  y: number
+  anchor: 'start' | 'middle' | 'end'
+  box: LabelBox
+}
+
+/** Rough text width (SVG has no measuring without a DOM): ~0.58em per glyph for a semibold sans. */
+export const labelWidth = (text: string, fontSize: number): number => text.length * fontSize * 0.58
+
+const overlaps = (a: LabelBox, b: LabelBox, pad: number) =>
+  a.left < b.right + pad && b.left < a.right + pad && a.top < b.bottom + pad && b.top < a.bottom + pad
+
+/**
+ * Chooses which extrema get a value label so labels never overlap. Dots are always drawn elsewhere;
+ * only labels are dropped. Priority: the day's absolute max and min, then the most prominent
+ * remaining ones. Each label tries above its dot, then below; if both collide it is skipped.
+ */
+export function placeLabels(
+  marks: LabelInput[],
+  frame: { width: number; height: number; fontSize: number },
+): PlacedLabel[] {
+  if (!marks.length) return []
+  const { width, height, fontSize } = frame
+  const gap = 12
+  const mean = marks.reduce((s, m) => s + m.value, 0) / marks.length
+  const top = marks.reduce((a, b) => (b.value > a.value ? b : a))
+  const bottom = marks.reduce((a, b) => (b.value < a.value ? b : a))
+  const rest = marks
+    .filter((m) => m !== top && m !== bottom)
+    .sort((a, b) => Math.abs(b.value - mean) - Math.abs(a.value - mean))
+  const order = top === bottom ? [top, ...rest] : [top, bottom, ...rest]
+
+  const placed: PlacedLabel[] = []
+  for (const m of order) {
+    const w = labelWidth(m.text, fontSize)
+    const anchor = m.x - w / 2 < 0 ? 'start' : m.x + w / 2 > width ? 'end' : 'middle'
+    const left = anchor === 'start' ? m.x : anchor === 'end' ? m.x - w : m.x - w / 2
+    const candidates = [m.y - gap, m.y + gap + fontSize] // above, then below
+    for (const baseline of candidates) {
+      const box = { left, right: left + w, top: baseline - fontSize, bottom: baseline }
+      if (box.top < 0 || box.bottom > height || box.left < 0 || box.right > width) continue
+      if (placed.some((p) => overlaps(box, p.box, 4))) continue
+      placed.push({ index: m.index, text: m.text, x: m.x, y: baseline, anchor, box })
+      break
+    }
+  }
+  return placed.sort((a, b) => a.index - b.index)
+}

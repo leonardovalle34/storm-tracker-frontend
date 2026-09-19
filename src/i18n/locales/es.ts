@@ -56,6 +56,8 @@ export default {
     swell: 'Oleaje (m)',
     tide: 'Marea (m)',
     waterTemp: 'Temp. del agua (°C)',
+    period: 'Período (s)',
+    swellDir: 'Dirección del oleaje',
     longTerm: 'Estimación a largo plazo',
     longTermHint: 'El pronóstico de olas es menos fiable después del 7.º día',
     tideChart: 'Curva de marea',

@@ -56,6 +56,8 @@ export default {
     swell: 'Ondulação (m)',
     tide: 'Maré (m)',
     waterTemp: 'Temp. da água (°C)',
+    period: 'Período (s)',
+    swellDir: 'Direção da ondulação',
     longTerm: 'Estimativa de longo prazo',
     longTermHint: 'A previsão de ondas é menos confiável após o 7º dia',
     tideChart: 'Curva de maré',

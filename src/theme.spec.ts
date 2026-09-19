@@ -53,6 +53,13 @@ describe('theme tokens', () => {
     expect(contrast(t.ocean, t.surface)).toBeGreaterThanOrEqual(4.5)
   })
 
+  it('day-divider border is defined for both themes and stronger than the regular border', () => {
+    for (const t of [light, dark]) {
+      expect(t['border-strong']).toBeDefined()
+      expect(contrast(t['border-strong'], t.surface)).toBeGreaterThan(contrast(t.border, t.surface))
+    }
+  })
+
   it('ocean teal differs between themes', () => {
     expect(dark.ocean).not.toBe(light.ocean)
   })

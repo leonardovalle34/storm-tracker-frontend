@@ -17,6 +17,7 @@ describe('App', () => {
   beforeEach(() => {
     setLocale('pt')
     _resetSelectedLocation()
+    vi.mocked(api.fetchForecast).mockReset()
     vi.mocked(api.fetchForecast).mockResolvedValue(makeForecast())
     vi.mocked(api.fetchMarine).mockResolvedValue(makeMarine(false))
     vi.mocked(api.fetchMoonPhase).mockResolvedValue({ date: 'x', phase_index: 1, phase_name: 'New Moon' })
@@ -48,6 +49,28 @@ describe('App', () => {
     const ids = w.findAll('main > section').map((s) => s.attributes('data-section'))
     expect(ids).toEqual(['map', 'forecast', 'wind', 'models'])
     expect(w.findAll('[data-testid="model-frame"]')).toHaveLength(3)
+  })
+
+  it('on first visit, uses the browser geolocation to load weather without any typing', async () => {
+    localStorage.clear()
+    const getCurrentPosition = vi.fn((ok: (p: unknown) => void) =>
+      ok({ coords: { latitude: -23.5, longitude: -46.6 } }),
+    )
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition } })
+    const w = mk()
+    await flushPromises()
+    expect(api.fetchForecast).toHaveBeenCalledWith(-23.5, -46.6)
+    expect(api.fetchMarine).toHaveBeenCalledWith(-23.5, -46.6)
+    expect(w.find('[data-testid="day-cards"]').exists()).toBe(true)
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined })
+  })
+
+  it('starts empty, without errors, when there is no geolocation', async () => {
+    const w = mk()
+    await flushPromises()
+    expect(api.fetchForecast).not.toHaveBeenCalled()
+    expect(w.find('[role="alert"]').exists()).toBe(false)
+    expect(w.text()).toContain('Escolha um local no mapa')
   })
 
   it('shows an error when the forecast fails', async () => {

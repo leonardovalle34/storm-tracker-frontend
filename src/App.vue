@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
@@ -8,12 +8,15 @@ import LocationMap from '@/components/LocationMap.vue'
 import ModelMaps from '@/components/ModelMaps.vue'
 import OceanGrid from '@/components/OceanGrid.vue'
 import WindGrid from '@/components/WindGrid.vue'
+import { requestInitialLocation } from '@/composables/useGeolocation'
 import { useSelectedLocation } from '@/composables/useSelectedLocation'
 import { useWeather } from '@/composables/useWeather'
 
 const { t } = useI18n()
 const { location } = useSelectedLocation()
 const { forecast, marine, loading, error, isCoastal } = useWeather()
+
+onMounted(() => void requestInitialLocation())
 
 // Windy needs a centre even before the user picks something (Santos, SP).
 const DEFAULT_CENTER = { latitude: -23.96, longitude: -46.33 }

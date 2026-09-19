@@ -32,8 +32,8 @@ export interface MarineHourly {
   time: string[]
   wave_height: (number | null)[]
   swell_wave_height: (number | null)[]
-  swell_wave_direction?: (number | null)[]
-  swell_wave_period?: (number | null)[]
+  swell_wave_direction: (number | null)[]
+  swell_wave_period: (number | null)[]
   sea_level_height_msl: (number | null)[]
   sea_surface_temperature: (number | null)[]
 }

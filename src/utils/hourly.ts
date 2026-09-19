@@ -41,6 +41,8 @@ export function buildWindDays(
 export interface MarineColumn {
   hour: number
   swell: number | null
+  period: number | null
+  swellDir: number | null
   tide: number | null
   waterTemp: number | null
 }
@@ -60,6 +62,8 @@ export function buildMarineDays(h: MarineHourly): MarineDay[] {
   return groupDays(h.time, (i, hour) => ({
     hour,
     swell: h.swell_wave_height[i] ?? null,
+    period: h.swell_wave_period[i] ?? null,
+    swellDir: h.swell_wave_direction[i] ?? null,
     tide: h.sea_level_height_msl[i] ?? null,
     waterTemp: h.sea_surface_temperature[i] ?? null,
   })).map((d) => ({ ...d, tideSeries: tideByDate.get(d.date)! }))

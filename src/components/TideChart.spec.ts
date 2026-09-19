@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { defineComponent } from 'vue'
 import { i18n, setLocale } from '@/i18n'
+import { labelWidth } from '@/utils/tide'
 import TideChart from './TideChart.vue'
 
 // 24 hourly values (index = hour): peaks at 3h/15h (+1 m), valleys at 9h/21h (-1 m)
@@ -27,11 +28,49 @@ describe('TideChart', () => {
     const marks = w.findAll('[data-testid="tide-extreme"]')
     expect(marks).toHaveLength(4)
     expect(marks.map((m) => m.attributes('data-type'))).toEqual(['peak', 'valley', 'peak', 'valley'])
-    expect(marks.map((m) => m.get('text').text())).toEqual(['1.00 m', '-1.00 m', '1.00 m', '-1.00 m'])
+    expect(marks.map((m) => m.get('[data-testid="tide-label"]').text())).toEqual([
+      '1.00 m',
+      '-1.00 m',
+      '1.00 m',
+      '-1.00 m',
+    ])
     for (const m of marks) {
       expect(m.find('circle').exists()).toBe(true)
-      expect(Number(m.get('text').attributes('y'))).toBeLessThan(Number(m.get('circle').attributes('cy')))
+      expect(Number(m.get('[data-testid="tide-label"]').attributes('y'))).toBeLessThan(
+        Number(m.get('circle').attributes('cy')),
+      )
     }
+  })
+
+  it('never overlaps labels when peaks and valleys are close, keeping every dot and the day max/min', () => {
+    // wiggles every 2 hours around 1 m => neighbouring extrema are ~67 units apart, labels are wider
+    const wiggle = Array.from(
+      { length: 24 },
+      (_, h) => 1 + (h === 10 ? 0.9 : 0) - (h === 14 ? 0.8 : 0) + (h % 4 < 2 ? 0.05 : -0.05),
+    )
+    const w = mk(wiggle)
+    const groups = w.findAll('[data-testid="tide-extreme"]')
+    expect(groups.length).toBeGreaterThan(4)
+    expect(groups.every((g) => g.find('circle').exists())).toBe(true) // dots are never dropped
+    const labels = w.findAll('[data-testid="tide-label"]')
+    expect(labels.length).toBeGreaterThanOrEqual(2)
+    expect(labels.length).toBeLessThan(groups.length)
+    const box = (t: (typeof labels)[number]) => {
+      const x = Number(t.attributes('x'))
+      const y = Number(t.attributes('y'))
+      const wd = labelWidth(t.text(), Number(t.attributes('font-size')))
+      const a = t.attributes('text-anchor')
+      const left = a === 'start' ? x : a === 'end' ? x - wd : x - wd / 2
+      return { left, right: left + wd, top: y - Number(t.attributes('font-size')), bottom: y }
+    }
+    for (let i = 0; i < labels.length; i++)
+      for (let j = i + 1; j < labels.length; j++) {
+        const [a, b] = [box(labels[i]), box(labels[j])]
+        expect(a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom).toBe(false)
+      }
+    const texts = labels.map((l) => l.text())
+    expect(texts).toContain(`${Math.max(...wiggle).toFixed(2)} m`) // absolute max
+    expect(texts).toContain(`${Math.min(...wiggle).toFixed(2)} m`) // absolute min
   })
 
   it('aligns the hour axis with the 7 grid columns (3h..21h at column centers)', () => {

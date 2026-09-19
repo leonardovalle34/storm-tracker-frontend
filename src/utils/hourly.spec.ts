@@ -40,10 +40,19 @@ describe('hourly utils', () => {
       time,
       wave_height: time.map(() => 1),
       swell_wave_height: time.map((_, i) => (i === 3 ? null : 1.5)),
+      swell_wave_period: time.map(() => 11),
+      swell_wave_direction: time.map(() => 180),
       sea_level_height_msl: time.map(() => 0.2),
       sea_surface_temperature: time.map(() => 22),
     })
-    expect(days[0].columns[0]).toMatchObject({ hour: 3, swell: null, tide: 0.2, waterTemp: 22 })
+    expect(days[0].columns[0]).toMatchObject({
+      hour: 3,
+      swell: null,
+      period: 11,
+      swellDir: 180,
+      tide: 0.2,
+      waterTemp: 22,
+    })
     expect(days[0].columns[1].swell).toBe(1.5)
   })
 
@@ -54,6 +63,8 @@ describe('hourly utils', () => {
         time: ['a'],
         wave_height: [null],
         swell_wave_height: [1],
+        swell_wave_period: [],
+        swell_wave_direction: [],
         sea_level_height_msl: [1],
         sea_surface_temperature: [1],
       }),
@@ -63,6 +74,8 @@ describe('hourly utils', () => {
         time: ['a', 'b'],
         wave_height: [null, 0.4],
         swell_wave_height: [],
+        swell_wave_period: [],
+        swell_wave_direction: [],
         sea_level_height_msl: [],
         sea_surface_temperature: [],
       }),
