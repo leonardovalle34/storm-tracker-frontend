@@ -16,7 +16,9 @@ function initial(): LocaleCode {
   try {
     const v = localStorage.getItem(KEY)
     if (v === 'pt' || v === 'en' || v === 'es') return v
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   const nav = typeof navigator !== 'undefined' ? navigator.language.slice(0, 2) : 'pt'
   return nav === 'en' || nav === 'es' ? nav : 'pt'
 }
@@ -33,5 +35,9 @@ document.documentElement.lang = i18n.global.locale.value
 export function setLocale(code: LocaleCode) {
   i18n.global.locale.value = code
   document.documentElement.lang = code
-  try { localStorage.setItem(KEY, code) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(KEY, code)
+  } catch {
+    /* ignore */
+  }
 }

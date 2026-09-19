@@ -7,7 +7,9 @@ function read(): Theme {
   try {
     const v = localStorage.getItem(KEY)
     if (v === 'dark' || v === 'light') return v
-  } catch { /* storage unavailable */ }
+  } catch {
+    /* storage unavailable */
+  }
   return 'light'
 }
 
@@ -15,7 +17,11 @@ const theme = ref<Theme>(read())
 
 function apply(t: Theme) {
   document.documentElement.classList.toggle('dark', t === 'dark')
-  try { localStorage.setItem(KEY, t) } catch { /* ignore */ }
+  try {
+    localStorage.setItem(KEY, t)
+  } catch {
+    /* ignore */
+  }
 }
 
 export function _resetTheme() {

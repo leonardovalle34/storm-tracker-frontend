@@ -8,4 +8,6 @@ npm install
 npm run dev
 npm test               # vitest run
 npm run build
+npm run lint           # eslint (npm run lint:fix to autofix)
+npm run format         # prettier (format:check to verify)
 ```

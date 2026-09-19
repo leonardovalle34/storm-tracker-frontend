@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { HOURS } from '@/utils/hourly'
 import { findExtrema, smoothPath } from '@/utils/tide'
@@ -8,8 +8,7 @@ import { findExtrema, smoothPath } from '@/utils/tide'
 const props = defineProps<{ series: (number | null)[] }>()
 const { t } = useI18n()
 
-let seq = 0
-const gradId = `tide-grad-${++seq}-${Math.random().toString(36).slice(2, 7)}`
+const gradId = `tide-grad-${useId()}` // unique per instance (16 charts on the page)
 
 // The viewBox is 7 grid columns wide, 100 units each, so the 3h..21h axis labels sit at the
 // column centers and line up with the hourly grid below (which shares the same 7 columns).
@@ -76,21 +75,9 @@ const marks = computed(() =>
       stroke-linecap="round"
       stroke-linejoin="round"
     />
-    <g
-      v-for="m in marks"
-      :key="m.index"
-      data-testid="tide-extreme"
-      :data-type="m.type"
-    >
+    <g v-for="m in marks" :key="m.index" data-testid="tide-extreme" :data-type="m.type">
       <circle :cx="m.x" :cy="m.y" r="5" fill="currentColor" class="stroke-surface" stroke-width="2" />
-      <text
-        :x="m.x"
-        :y="m.y - 12"
-        :text-anchor="m.anchor"
-        font-size="20"
-        font-weight="600"
-        class="fill-ink"
-      >
+      <text :x="m.x" :y="m.y - 12" :text-anchor="m.anchor" font-size="20" font-weight="600" class="fill-ink">
         {{ m.label }}
       </text>
     </g>

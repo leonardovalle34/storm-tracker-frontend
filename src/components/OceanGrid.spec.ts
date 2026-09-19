@@ -35,7 +35,9 @@ describe('OceanGrid', () => {
     const day = w.get('[data-testid="ocean-day"]')
     const chart = day.get('[data-testid="tide-chart"]')
     const firstHead = day.get('[data-testid="hour-head"]')
-    expect(chart.element.compareDocumentPosition(firstHead.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      chart.element.compareDocumentPosition(firstHead.element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
     expect(day.findAll('[data-testid="swell-cell"]')).toHaveLength(7)
   })
 
@@ -44,7 +46,10 @@ describe('OceanGrid', () => {
       const d = new Date(2026, 8, 19 + i)
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     })
-    const long = mount(OceanGrid, { props: { hourly: makeMarine(true, days).hourly }, global: { plugins: [i18n] } })
+    const long = mount(OceanGrid, {
+      props: { hourly: makeMarine(true, days).hourly },
+      global: { plugins: [i18n] },
+    })
 
     it('flags only days 8 to 16, keeping their data visible', () => {
       const blocks = long.findAll('[data-testid="ocean-day"]')

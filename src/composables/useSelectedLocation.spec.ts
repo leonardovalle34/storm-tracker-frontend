@@ -14,6 +14,10 @@ describe('useSelectedLocation', () => {
     a.select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
     expect(b.location.value?.name).toBe('Santos')
     b.selectCoords(10.1234567, 20.7654321)
-    expect(a.location.value).toEqual({ name: '10.1235, 20.7654', latitude: 10.1234567, longitude: 20.7654321 })
+    expect(a.location.value).toEqual({
+      name: '10.1235, 20.7654',
+      latitude: 10.1234567,
+      longitude: 20.7654321,
+    })
   })
 })

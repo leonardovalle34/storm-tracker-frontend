@@ -1,10 +1,26 @@
 export type WeatherKey =
-  | 'clear' | 'partlyCloudy' | 'overcast' | 'fog' | 'drizzle'
-  | 'rain' | 'snow' | 'showers' | 'thunderstorm' | 'unknown'
+  | 'clear'
+  | 'partlyCloudy'
+  | 'overcast'
+  | 'fog'
+  | 'drizzle'
+  | 'rain'
+  | 'snow'
+  | 'showers'
+  | 'thunderstorm'
+  | 'unknown'
 
 const ICONS: Record<WeatherKey, string> = {
-  clear: '☀️', partlyCloudy: '⛅', overcast: '☁️', fog: '🌫️', drizzle: '🌦️',
-  rain: '🌧️', snow: '❄️', showers: '🌦️', thunderstorm: '⛈️', unknown: '🌤️',
+  clear: '☀️',
+  partlyCloudy: '⛅',
+  overcast: '☁️',
+  fog: '🌫️',
+  drizzle: '🌦️',
+  rain: '🌧️',
+  snow: '❄️',
+  showers: '🌦️',
+  thunderstorm: '⛈️',
+  unknown: '🌤️',
 }
 
 function keyFromCode(code: number): WeatherKey {

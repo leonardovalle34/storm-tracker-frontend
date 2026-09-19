@@ -23,7 +23,9 @@ describe('api service', () => {
   })
 
   it('geocode also accepts the {results: Location[]} shape', async () => {
-    fetchMock.mockReturnValue(ok({ results: [{ name: 'Rio', latitude: -22.9, longitude: -43.2, country: 'BR' }] }))
+    fetchMock.mockReturnValue(
+      ok({ results: [{ name: 'Rio', latitude: -22.9, longitude: -43.2, country: 'BR' }] }),
+    )
     expect(await geocode('rio')).toEqual([{ name: 'Rio, BR', latitude: -22.9, longitude: -43.2 }])
   })
 
@@ -56,7 +58,11 @@ describe('api service', () => {
 
   it('exposes status and FastAPI detail on errors (e.g. moon-phase 400)', async () => {
     fetchMock.mockReturnValue(
-      Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({ detail: 'Invalid date format' }) }),
+      Promise.resolve({
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve({ detail: 'Invalid date format' }),
+      }),
     )
     const err = await fetchMoonPhase('nope').catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
@@ -64,7 +70,9 @@ describe('api service', () => {
   })
 
   it('failed moon lookups are not cached', async () => {
-    fetchMock.mockReturnValueOnce(Promise.resolve({ ok: false, status: 429, json: () => Promise.resolve({}) }))
+    fetchMock.mockReturnValueOnce(
+      Promise.resolve({ ok: false, status: 429, json: () => Promise.resolve({}) }),
+    )
     await expect(fetchMoonPhase('2026-09-20')).rejects.toThrow()
     fetchMock.mockReturnValueOnce(ok({ date: '2026-09-20', phase_index: 2, phase_name: 'New Moon' }))
     await expect(fetchMoonPhase('2026-09-20')).resolves.toBeTruthy()

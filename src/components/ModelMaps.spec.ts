@@ -5,10 +5,16 @@ import ModelMaps from './ModelMaps.vue'
 
 const location = { name: 'Santos', latitude: -23.96, longitude: -46.33 }
 const mk = (coastal: boolean, attach = false) =>
-  mount(ModelMaps, { props: { location, coastal }, global: { plugins: [i18n] }, attachTo: attach ? document.body : undefined })
+  mount(ModelMaps, {
+    props: { location, coastal },
+    global: { plugins: [i18n] },
+    attachTo: attach ? document.body : undefined,
+  })
 
 const overlays = (w: ReturnType<typeof mk>) =>
-  w.findAll('[data-testid="model-frame"]').map((f) => new URL(f.attributes('src')!).searchParams.get('overlay'))
+  w
+    .findAll('[data-testid="model-frame"]')
+    .map((f) => new URL(f.attributes('src')!).searchParams.get('overlay'))
 
 describe('ModelMaps', () => {
   setLocale('pt')

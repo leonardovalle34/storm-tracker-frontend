@@ -23,9 +23,15 @@ describe('WindGrid', () => {
     const w = await mk()
     const days = w.findAll('[data-testid="wind-day"]')
     expect(days).toHaveLength(2)
-    expect(days[0].findAll('[data-testid="hour-head"]').map((c) => c.text())).toEqual(
-      ['3h', '6h', '9h', '12h', '15h', '18h', '21h'],
-    )
+    expect(days[0].findAll('[data-testid="hour-head"]').map((c) => c.text())).toEqual([
+      '3h',
+      '6h',
+      '9h',
+      '12h',
+      '15h',
+      '18h',
+      '21h',
+    ])
     expect(days[0].get('[data-testid="wind-scroll"]').classes()).toContain('overflow-x-auto')
   })
 

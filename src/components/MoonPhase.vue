@@ -33,7 +33,13 @@ watch(
     <span aria-hidden="true">{{ moonIcon(phase.phase_name) }}</span>
     {{ isKnownPhase(phase.phase_name) ? t(`moon.${phase.phase_name}`) : phase.phase_name }}
   </span>
-  <span v-else-if="invalid !== null" data-testid="moon-error" role="status" :title="invalid" class="text-sm text-muted">
+  <span
+    v-else-if="invalid !== null"
+    data-testid="moon-error"
+    role="status"
+    :title="invalid"
+    class="text-sm text-muted"
+  >
     {{ t('moon.invalidDate') }}
   </span>
 </template>

@@ -8,7 +8,10 @@ import App from './App.vue'
 
 vi.mock('@/services/api')
 
-const mk = () => mount(App, { global: { plugins: [i18n], stubs: { LocationMap: { template: '<div data-testid="map" />' } } } })
+const mk = () =>
+  mount(App, {
+    global: { plugins: [i18n], stubs: { LocationMap: { template: '<div data-testid="map" />' } } },
+  })
 
 describe('App', () => {
   beforeEach(() => {

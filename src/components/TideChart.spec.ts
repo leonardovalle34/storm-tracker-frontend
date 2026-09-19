@@ -1,11 +1,13 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { defineComponent } from 'vue'
 import { i18n, setLocale } from '@/i18n'
 import TideChart from './TideChart.vue'
 
 // 24 hourly values (index = hour): peaks at 3h/15h (+1 m), valleys at 9h/21h (-1 m)
 const series = Array.from({ length: 24 }, (_, h) => Math.sin((h / 24) * 4 * Math.PI))
-const mk = (s: (number | null)[] = series) => mount(TideChart, { props: { series: s }, global: { plugins: [i18n] } })
+const mk = (s: (number | null)[] = series) =>
+  mount(TideChart, { props: { series: s }, global: { plugins: [i18n] } })
 
 describe('TideChart', () => {
   setLocale('pt')
@@ -62,7 +64,15 @@ describe('TideChart', () => {
     expect(mk([]).find('svg').exists()).toBe(false)
   })
 
-  it('gives each instance its own gradient id', () => {
-    expect(mk().get('linearGradient').attributes('id')).not.toBe(mk().get('linearGradient').attributes('id'))
+  it('gives each instance in the same app its own gradient id', () => {
+    const Two = defineComponent({
+      components: { TideChart },
+      setup: () => ({ series }),
+      template: '<div><TideChart :series="series" /><TideChart :series="series" /></div>',
+    })
+    const ids = mount(Two, { global: { plugins: [i18n] } })
+      .findAll('linearGradient')
+      .map((g) => g.attributes('id'))
+    expect(new Set(ids).size).toBe(2)
   })
 })

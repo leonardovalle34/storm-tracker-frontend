@@ -33,7 +33,8 @@ onMounted(() => {
   map = L.map(el.value!).setView([-15, -50], 4)
   L.tileLayer(ESRI, {
     maxZoom: 17,
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    attribution:
+      'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
   }).addTo(map)
   map.on('click', (e: L.LeafletMouseEvent) => {
     fromMapClick = true
@@ -56,7 +57,12 @@ onBeforeUnmount(() => map?.remove())
 
 <template>
   <div>
-    <div ref="el" role="application" :aria-label="t('map.label')" class="z-0 h-72 w-full rounded-lg border border-line sm:h-96" />
+    <div
+      ref="el"
+      role="application"
+      :aria-label="t('map.label')"
+      class="z-0 h-72 w-full rounded-lg border border-line sm:h-96"
+    />
     <p class="mt-1 text-sm text-muted">{{ t('map.hint') }}</p>
   </div>
 </template>

@@ -32,15 +32,21 @@ const mapsCenter = computed(() => location.value ?? DEFAULT_CENTER)
 
       <p v-if="!location" class="text-muted">{{ t('common.noLocation') }}</p>
       <p v-else-if="loading" class="text-muted" role="status">{{ t('common.loading') }}</p>
-      <p v-else-if="error" role="alert" class="rounded-md border border-line bg-surface p-3">{{ t('common.error') }}</p>
+      <p v-else-if="error" role="alert" class="rounded-md border border-line bg-surface p-3">
+        {{ t('common.error') }}
+      </p>
 
       <template v-if="location && !loading && forecast">
         <section data-section="forecast"><ForecastCards :daily="forecast.daily" /></section>
         <section data-section="wind"><WindGrid :hourly="forecast.hourly" /></section>
-        <section v-if="isCoastal && marine" data-section="ocean"><OceanGrid :hourly="marine.hourly" /></section>
+        <section v-if="isCoastal && marine" data-section="ocean">
+          <OceanGrid :hourly="marine.hourly" />
+        </section>
       </template>
 
-      <section data-section="models"><ModelMaps :location="mapsCenter" :coastal="!!location && isCoastal" /></section>
+      <section data-section="models">
+        <ModelMaps :location="mapsCenter" :coastal="!!location && isCoastal" />
+      </section>
     </main>
     <AppFooter />
   </div>

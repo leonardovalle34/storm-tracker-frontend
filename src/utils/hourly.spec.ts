@@ -49,7 +49,23 @@ describe('hourly utils', () => {
 
   it('hasWaveData is decided only by wave_height being non-null', () => {
     expect(hasWaveData(undefined)).toBe(false)
-    expect(hasWaveData({ time: ['a'], wave_height: [null], swell_wave_height: [1], sea_level_height_msl: [1], sea_surface_temperature: [1] })).toBe(false)
-    expect(hasWaveData({ time: ['a', 'b'], wave_height: [null, 0.4], swell_wave_height: [], sea_level_height_msl: [], sea_surface_temperature: [] })).toBe(true)
+    expect(
+      hasWaveData({
+        time: ['a'],
+        wave_height: [null],
+        swell_wave_height: [1],
+        sea_level_height_msl: [1],
+        sea_surface_temperature: [1],
+      }),
+    ).toBe(false)
+    expect(
+      hasWaveData({
+        time: ['a', 'b'],
+        wave_height: [null, 0.4],
+        swell_wave_height: [],
+        sea_level_height_msl: [],
+        sea_surface_temperature: [],
+      }),
+    ).toBe(true)
   })
 })

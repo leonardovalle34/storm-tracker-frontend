@@ -26,8 +26,18 @@ async function get<T>(path: string, params: Record<string, string | number>): Pr
   return (await res.json()) as T
 }
 
-interface NominatimItem { display_name: string; lat: string; lon: string }
-interface OpenMeteoGeoItem { name: string; latitude: number; longitude: number; country?: string | null; admin1?: string | null }
+interface NominatimItem {
+  display_name: string
+  lat: string
+  lon: string
+}
+interface OpenMeteoGeoItem {
+  name: string
+  latitude: number
+  longitude: number
+  country?: string | null
+  admin1?: string | null
+}
 
 /** The backend proxies Nominatim (array of {display_name, lat, lon}); the {results: [...]} shape is also accepted. */
 export async function geocode(name: string): Promise<Location[]> {
@@ -45,8 +55,7 @@ export async function geocode(name: string): Promise<Location[]> {
 export const fetchForecast = (lat: number, lon: number) =>
   get<ForecastResponse>('/weather/forecast', { lat, lon })
 
-export const fetchMarine = (lat: number, lon: number) =>
-  get<MarineResponse>('/weather/marine', { lat, lon })
+export const fetchMarine = (lat: number, lon: number) => get<MarineResponse>('/weather/marine', { lat, lon })
 
 // Moon phase depends only on the date, so cache it across locations (saves the backend rate limit).
 const moonCache = new Map<string, Promise<MoonPhase>>()

@@ -12,7 +12,8 @@ const { t, locale } = useI18n()
 const days = computed(() => buildMarineDays(props.hourly))
 // Wave-model reliability drops sharply after ~day 7: days 8+ are flagged, never hidden.
 const LONG_TERM_FROM = 7
-const fmt = (v: number | null) => (v === null ? '–' : String(Math.round(v * 100) / 100).replace(/^(-?\d+)$/, '$1'))
+const fmt = (v: number | null) =>
+  v === null ? '–' : String(Math.round(v * 100) / 100).replace(/^(-?\d+)$/, '$1')
 const fmt1 = (v: number | null) => (v === null ? '–' : (Math.round(v * 10) / 10).toFixed(1))
 
 const rows = [
@@ -58,14 +59,31 @@ const rows = [
                 <td colspan="7" class="p-0"><TideChart :series="day.tideSeries" /></td>
               </tr>
               <tr>
-                <th scope="col" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">{{ t('wind.hour') }}</th>
-                <th v-for="c in day.columns" :key="c.hour" scope="col" data-testid="hour-head" class="px-2 py-1 font-medium">{{ c.hour }}h</th>
+                <th scope="col" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">
+                  {{ t('wind.hour') }}
+                </th>
+                <th
+                  v-for="c in day.columns"
+                  :key="c.hour"
+                  scope="col"
+                  data-testid="hour-head"
+                  class="px-2 py-1 font-medium"
+                >
+                  {{ c.hour }}h
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="r in rows" :key="r.id" class="border-t border-line">
-                <th scope="row" class="sticky left-0 whitespace-nowrap bg-surface px-2 py-1 text-left font-normal text-muted">{{ t(r.label) }}</th>
-                <td v-for="c in day.columns" :key="c.hour" :data-testid="`${r.id}-cell`" class="px-2 py-1.5">{{ r.get(c as never) }}</td>
+                <th
+                  scope="row"
+                  class="sticky left-0 whitespace-nowrap bg-surface px-2 py-1 text-left font-normal text-muted"
+                >
+                  {{ t(r.label) }}
+                </th>
+                <td v-for="c in day.columns" :key="c.hour" :data-testid="`${r.id}-cell`" class="px-2 py-1.5">
+                  {{ r.get(c as never) }}
+                </td>
               </tr>
             </tbody>
           </table>

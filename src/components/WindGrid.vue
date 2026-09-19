@@ -26,7 +26,12 @@ const days = computed(() => buildWindDays(props.hourly))
   <div>
     <h2 class="mb-3 text-xl font-semibold">{{ t('wind.title') }}</h2>
     <div class="space-y-4">
-      <section v-for="day in days" :key="day.date" data-testid="wind-day" class="rounded-lg border border-line bg-surface">
+      <section
+        v-for="day in days"
+        :key="day.date"
+        data-testid="wind-day"
+        class="rounded-lg border border-line bg-surface"
+      >
         <header class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3 py-2">
           <h3 class="font-medium capitalize">{{ formatDay(day.date, locale) }}</h3>
           <MoonPhase :date="day.date" />
@@ -35,13 +40,25 @@ const days = computed(() => buildWindDays(props.hourly))
           <table class="w-full min-w-[30rem] border-collapse text-center text-sm">
             <thead>
               <tr>
-                <th scope="col" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">{{ t('wind.hour') }}</th>
-                <th v-for="c in day.columns" :key="c.hour" scope="col" data-testid="hour-head" class="px-2 py-1 font-medium">{{ c.hour }}h</th>
+                <th scope="col" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">
+                  {{ t('wind.hour') }}
+                </th>
+                <th
+                  v-for="c in day.columns"
+                  :key="c.hour"
+                  scope="col"
+                  data-testid="hour-head"
+                  class="px-2 py-1 font-medium"
+                >
+                  {{ c.hour }}h
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <th scope="row" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">{{ t('wind.speed') }}</th>
+                <th scope="row" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">
+                  {{ t('wind.speed') }}
+                </th>
                 <td
                   v-for="c in day.columns"
                   :key="c.hour"
@@ -54,7 +71,9 @@ const days = computed(() => buildWindDays(props.hourly))
                 </td>
               </tr>
               <tr>
-                <th scope="row" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">{{ t('wind.direction') }}</th>
+                <th scope="row" class="sticky left-0 bg-surface px-2 py-1 text-left font-normal text-muted">
+                  {{ t('wind.direction') }}
+                </th>
                 <td
                   v-for="c in day.columns"
                   :key="c.hour"

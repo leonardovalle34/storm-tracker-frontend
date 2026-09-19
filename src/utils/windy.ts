@@ -1,7 +1,11 @@
 export type WindyOverlay = 'rain' | 'snow' | 'temp' | 'waves' | 'sst'
 
 /** Windy embed2.html. `expanded` = modal version: closer zoom and the Windy menu visible. */
-export function windyUrl(loc: { latitude: number; longitude: number }, overlay: WindyOverlay, expanded = false): string {
+export function windyUrl(
+  loc: { latitude: number; longitude: number },
+  overlay: WindyOverlay,
+  expanded = false,
+): string {
   const p = new URLSearchParams({
     lat: String(loc.latitude),
     lon: String(loc.longitude),
