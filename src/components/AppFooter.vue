@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import fullLogo from '@/assets/full-logo.png'
+import fullLogo from '@/assets/full-logo-light.png'
 
 const { t } = useI18n()
 </script>
@@ -9,10 +9,8 @@ const { t } = useI18n()
   <!-- Same fixed navy as the header: brand color, identical in light and dark themes -->
   <footer class="bg-brand text-brand-fg">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
-      <!-- the logo has transparent background and dark lettering, so it sits on a light badge -->
-      <span class="inline-flex rounded-md bg-white p-1">
-        <img :src="fullLogo" :alt="t('app.title')" class="h-10 w-auto" />
-      </span>
+      <!-- full logo with the lettering recolored to light: legible straight on the navy, no backing box -->
+      <img :src="fullLogo" :alt="t('app.title')" class="h-24 w-auto" />
       <p class="text-sm text-brand-fg/85">
         {{ t('footer.madeBy') }}
         <a

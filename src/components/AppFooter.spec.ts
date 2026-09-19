@@ -35,10 +35,13 @@ describe('AppFooter', () => {
     for (const el of els) expect(el.getAttribute('class') ?? '', el.tagName).not.toMatch(themed)
   })
 
-  it('keeps the dark logo text readable by placing the logo on a light badge', () => {
-    const badge = w.get('img').element.parentElement!
-    expect(badge.classList.contains('bg-white')).toBe(true)
-    expect(badge.classList.contains('rounded-md')).toBe(true)
+  it('shows the brand large, straight on the navy: no white box around the logo', () => {
+    const img = w.get('img')
+    expect(img.attributes('src')).toContain('full-logo-light') // lettering recolored for dark backgrounds
+    expect(img.classes()).toContain('h-24') // ~96px tall (was 40px)
+    const box = img.element.parentElement!
+    expect(box.classList.contains('bg-white')).toBe(false)
+    expect(img.element.className).not.toMatch(/bg-white/)
   })
 
   it('the credit link stays legible on navy (light text, underlined)', () => {
