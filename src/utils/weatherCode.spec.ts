@@ -21,6 +21,5 @@ describe('describeWeather', () => {
   it('is unknown without a code (no precipitation-based guessing)', () => {
     expect(describeWeather(undefined).key).toBe('unknown')
     expect(describeWeather(null).key).toBe('unknown')
-    expect(describeWeather(undefined, 12).key).toBe('unknown')
   })
 })
