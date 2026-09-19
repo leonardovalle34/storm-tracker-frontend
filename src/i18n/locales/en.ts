@@ -21,11 +21,13 @@ export default {
     level: { calm: 'Calm', moderate: 'Moderate', strong: 'Strong', extreme: 'Extreme' },
   },
   moon: {
+    invalidDate: 'Invalid date for the moon phase.',
     'New Moon': 'New Moon', 'Waxing Crescent': 'Waxing Crescent', 'First Quarter': 'First Quarter',
     'Waxing Gibbous': 'Waxing Gibbous', 'Full Moon': 'Full Moon', 'Waning Gibbous': 'Waning Gibbous',
     'Last Quarter': 'Last Quarter', 'Waning Crescent': 'Waning Crescent',
   },
-  ocean: { title: 'Ocean', swell: 'Swell (m)', tide: 'Tide (m)', waterTemp: 'Water temp (°C)' },
+  ocean: { title: 'Ocean', swell: 'Swell (m)', tide: 'Tide (m)', waterTemp: 'Water temp (°C)',
+    longTerm: 'Long-term estimate', longTermHint: 'Wave forecasts are less reliable after day 7', tideChart: 'Tide curve' },
   models: {
     title: 'Model maps', rain: 'Rain', snow: 'Snow', temp: 'Temperature', waves: 'Waves', sst: 'Water temperature',
     expand: 'Expand map', close: 'Close',

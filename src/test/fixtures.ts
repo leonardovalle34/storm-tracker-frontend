@@ -15,7 +15,7 @@ export function makeForecast(days = ['2026-09-19', '2026-09-20']): ForecastRespo
     },
     hourly: {
       time,
-      wind_speed_10m: time.map((_, i) => (i % 24 === 3 ? 5 : i % 24 === 6 ? 25 : i % 24 === 9 ? 40 : 60)), // km/h
+      wind_speed_10m: time.map((_, i) => (i % 24 === 3 ? 3 : i % 24 === 6 ? 13 : i % 24 === 9 ? 22 : 32)), // knots
       wind_direction_10m: time.map((_, i) => (i % 24) * 10),
     },
   }

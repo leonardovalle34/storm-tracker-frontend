@@ -21,11 +21,13 @@ export default {
     level: { calm: 'Calma', moderate: 'Moderado', strong: 'Fuerte', extreme: 'Extremo' },
   },
   moon: {
+    invalidDate: 'Fecha inválida para la fase lunar.',
     'New Moon': 'Luna Nueva', 'Waxing Crescent': 'Creciente', 'First Quarter': 'Cuarto Creciente',
     'Waxing Gibbous': 'Gibosa Creciente', 'Full Moon': 'Luna Llena', 'Waning Gibbous': 'Gibosa Menguante',
     'Last Quarter': 'Cuarto Menguante', 'Waning Crescent': 'Menguante',
   },
-  ocean: { title: 'Océano', swell: 'Oleaje (m)', tide: 'Marea (m)', waterTemp: 'Temp. del agua (°C)' },
+  ocean: { title: 'Océano', swell: 'Oleaje (m)', tide: 'Marea (m)', waterTemp: 'Temp. del agua (°C)',
+    longTerm: 'Estimación a largo plazo', longTermHint: 'El pronóstico de olas es menos fiable después del 7.º día', tideChart: 'Curva de marea' },
   models: {
     title: 'Mapas de modelo', rain: 'Lluvia', snow: 'Nieve', temp: 'Temperatura', waves: 'Olas', sst: 'Temperatura del agua',
     expand: 'Ampliar mapa', close: 'Cerrar',

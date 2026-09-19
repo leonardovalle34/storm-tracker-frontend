@@ -19,6 +19,7 @@
   --border: #cbd5e1;
   --accent: #0e7490;
   --accent-fg: #ffffff;
+  --ocean: #0f766e;
 
   --wind-calm-bg: #bbf7d0;
   --wind-calm-fg: #14532d;
@@ -39,6 +40,7 @@
   --border: #2b3b57;
   --accent: #22d3ee;
   --accent-fg: #06202a;
+  --ocean: #2dd4bf;
 
   --wind-calm-bg: #14532d;
   --wind-calm-fg: #dcfce7;
@@ -61,6 +63,7 @@
   --color-line: var(--border);
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
+  --color-ocean: var(--ocean);
   --color-wind-calm: var(--wind-calm-bg);
   --color-wind-calm-fg: var(--wind-calm-fg);
   --color-wind-moderate: var(--wind-moderate-bg);

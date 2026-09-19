@@ -30,4 +30,30 @@ describe('OceanGrid', () => {
   it('shows a dash for null values', () => {
     expect(w.get('[data-testid="ocean-day"]').findAll('[data-testid="swell-cell"]')[0].text()).toBe('–')
   })
+
+  it('puts a tide curve chart above each day grid (grid stays)', () => {
+    const day = w.get('[data-testid="ocean-day"]')
+    const chart = day.get('[data-testid="tide-chart"]')
+    const firstHead = day.get('[data-testid="hour-head"]')
+    expect(chart.element.compareDocumentPosition(firstHead.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(day.findAll('[data-testid="swell-cell"]')).toHaveLength(7)
+  })
+
+  describe('long-term reliability flag', () => {
+    const days = Array.from({ length: 16 }, (_, i) => {
+      const d = new Date(2026, 8, 19 + i)
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    })
+    const long = mount(OceanGrid, { props: { hourly: makeMarine(true, days).hourly }, global: { plugins: [i18n] } })
+
+    it('flags only days 8 to 16, keeping their data visible', () => {
+      const blocks = long.findAll('[data-testid="ocean-day"]')
+      expect(blocks).toHaveLength(16)
+      const flagged = blocks.map((b) => b.find('[data-testid="long-term"]').exists())
+      expect(flagged.slice(0, 7).every((f) => !f)).toBe(true)
+      expect(flagged.slice(7).every((f) => f)).toBe(true)
+      expect(blocks[7].get('[data-testid="long-term"]').text()).toContain('Estimativa de longo prazo')
+      expect(blocks[15].findAll('[data-testid="swell-cell"]')).toHaveLength(7)
+    })
+  })
 })

@@ -21,12 +21,8 @@ function keyFromCode(code: number): WeatherKey {
   return 'unknown'
 }
 
-/** WMO weather_code -> icon + i18n key. Without a code, degrade to a precipitation-based guess. */
-export function describeWeather(code?: number | null, precipitationMm?: number | null): { key: WeatherKey; icon: string } {
-  let key: WeatherKey
-  if (code != null) key = keyFromCode(code)
-  else if ((precipitationMm ?? 0) >= 10) key = 'rain'
-  else if ((precipitationMm ?? 0) >= 1) key = 'showers'
-  else key = 'unknown'
+/** WMO weather_code -> icon + i18n key. A missing code is 'unknown' (no guessing from precipitation). */
+export function describeWeather(code?: number | null): { key: WeatherKey; icon: string } {
+  const key = code == null ? 'unknown' : keyFromCode(code)
   return { key, icon: ICONS[key] }
 }

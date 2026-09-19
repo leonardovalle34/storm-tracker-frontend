@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchForecast, fetchMarine, fetchMoonPhase, geocode, _clearMoonCache } from './api'
+import { ApiError, fetchForecast, fetchMarine, fetchMoonPhase, geocode, _clearMoonCache } from './api'
 
 const fetchMock = vi.fn()
 
@@ -52,6 +52,15 @@ describe('api service', () => {
   it('throws on non-ok responses', async () => {
     fetchMock.mockReturnValue(Promise.resolve({ ok: false, status: 502, json: () => Promise.resolve({}) }))
     await expect(fetchForecast(0, 0)).rejects.toThrow(/502/)
+  })
+
+  it('exposes status and FastAPI detail on errors (e.g. moon-phase 400)', async () => {
+    fetchMock.mockReturnValue(
+      Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({ detail: 'Invalid date format' }) }),
+    )
+    const err = await fetchMoonPhase('nope').catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err).toMatchObject({ status: 400, detail: 'Invalid date format' })
   })
 
   it('failed moon lookups are not cached', async () => {

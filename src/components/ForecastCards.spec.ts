@@ -23,6 +23,12 @@ describe('ForecastCards', () => {
     expect(c.get('[data-testid="weather-icon"]').attributes('aria-label')).toBe('Chuva')
   })
 
+  it('uses weather_code for the icon, ignoring precipitation', () => {
+    const d = { ...daily, weather_code: [0, 95, 71], precipitation_sum: [30, 0, 0] }
+    const m = mount(ForecastCards, { props: { daily: d }, global: { plugins: [i18n] } })
+    expect(m.findAll('[data-testid="weather-icon"]').map((i) => i.text())).toEqual(['☀️', '⛈️', '❄️'])
+  })
+
   it('has a translated title', () => {
     expect(w.text()).toContain('Previsão de 16 dias')
   })

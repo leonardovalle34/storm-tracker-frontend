@@ -9,16 +9,16 @@ describe('hourly utils', () => {
     expect(HOURS).toEqual([3, 6, 9, 12, 15, 18, 21])
   })
 
-  it('builds one block per day with 7 wind columns, speed in knots', () => {
+  it('builds one block per day with 7 wind columns, speed taken as-is (API already in knots)', () => {
     const time = times(['2026-09-19', '2026-09-20'])
     const days = buildWindDays({
       time,
-      wind_speed_10m: time.map((_, i) => 18.52 + i), // km/h
+      wind_speed_10m: time.map((_, i) => 10 + i), // knots
       wind_direction_10m: time.map((_, i) => i),
     })
     expect(days.map((d) => d.date)).toEqual(['2026-09-19', '2026-09-20'])
     expect(days[0].columns.map((c) => c.hour)).toEqual(HOURS)
-    expect(days[0].columns[0].knots).toBeCloseTo((18.52 + 3) / 1.852, 5)
+    expect(days[0].columns[0].knots).toBe(13)
     expect(days[0].columns[0].direction).toBe(3)
     expect(days[1].columns[6].direction).toBe(24 + 21)
     expect(days[0].columns[0].level).toBe('moderate')

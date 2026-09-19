@@ -15,7 +15,7 @@ const cards = computed(() =>
     max: Math.round(props.daily.temperature_2m_max[i]),
     min: Math.round(props.daily.temperature_2m_min[i]),
     rain: props.daily.precipitation_sum[i] ?? 0,
-    weather: describeWeather(props.daily.weather_code?.[i], props.daily.precipitation_sum[i]),
+    weather: describeWeather(props.daily.weather_code?.[i]),
   })),
 )
 </script>

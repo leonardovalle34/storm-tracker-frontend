@@ -45,6 +45,18 @@ describe('theme tokens', () => {
     }
   })
 
+  it.each([
+    ['light', light],
+    ['dark', dark],
+  ])('%s: ocean teal is readable (AA) on surface', (_n, t) => {
+    expect(t.ocean).toBeDefined()
+    expect(contrast(t.ocean, t.surface)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('ocean teal differs between themes', () => {
+    expect(dark.ocean).not.toBe(light.ocean)
+  })
+
   it('brand color is fixed navy and not overridden by the dark theme', () => {
     expect(light.brand.toLowerCase()).toBe('#0b2338')
     expect(dark.brand).toBeUndefined()

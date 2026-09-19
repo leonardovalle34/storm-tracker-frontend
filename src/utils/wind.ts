@@ -1,7 +1,5 @@
 export type WindLevel = 'calm' | 'moderate' | 'strong' | 'extreme'
 
-export const kmhToKnots = (kmh: number): number => kmh / 1.852
-
 /** Intensity bands in knots: <10 calm, <20 moderate, <30 strong, otherwise extreme. */
 export function windLevel(knots: number): WindLevel {
   if (knots < 10) return 'calm'

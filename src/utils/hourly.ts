@@ -1,5 +1,5 @@
 import type { HourlyForecast, MarineHourly } from '@/types/weather'
-import { kmhToKnots, windLevel, type WindLevel } from './wind'
+import { windLevel, type WindLevel } from './wind'
 
 /** One column every 3 hours, 3h..21h. */
 export const HOURS = [3, 6, 9, 12, 15, 18, 21]
@@ -26,20 +26,31 @@ export interface WindColumn { hour: number; knots: number; direction: number; le
 
 export function buildWindDays(h: Pick<HourlyForecast, 'time' | 'wind_speed_10m' | 'wind_direction_10m'>): Day<WindColumn>[] {
   return groupDays(h.time, (i, hour) => {
-    const knots = kmhToKnots(h.wind_speed_10m[i])
+    const knots = h.wind_speed_10m[i] // the API already returns knots (wind_speed_unit=kn)
     return { hour, knots, direction: h.wind_direction_10m[i], level: windLevel(knots) }
   })
 }
 
 export interface MarineColumn { hour: number; swell: number | null; tide: number | null; waterTemp: number | null }
 
-export function buildMarineDays(h: MarineHourly): Day<MarineColumn>[] {
+export interface MarineDay extends Day<MarineColumn> {
+  /** Tide (sea_level_height_msl) for every hour of the day, indexed by hour 0..23; null where missing. */
+  tideSeries: (number | null)[]
+}
+
+export function buildMarineDays(h: MarineHourly): MarineDay[] {
+  const tideByDate = new Map<string, (number | null)[]>()
+  h.time.forEach((t, i) => {
+    const date = t.slice(0, 10)
+    if (!tideByDate.has(date)) tideByDate.set(date, Array<number | null>(24).fill(null))
+    tideByDate.get(date)![Number(t.slice(11, 13))] = h.sea_level_height_msl[i] ?? null
+  })
   return groupDays(h.time, (i, hour) => ({
     hour,
     swell: h.swell_wave_height[i] ?? null,
     tide: h.sea_level_height_msl[i] ?? null,
     waterTemp: h.sea_surface_temperature[i] ?? null,
-  }))
+  })).map((d) => ({ ...d, tideSeries: tideByDate.get(d.date)! }))
 }
 
 /** Coastal iff the API returned any non-null wave_height — no geographic logic. */

@@ -9,7 +9,7 @@ export interface DailyForecast {
   temperature_2m_max: number[]
   temperature_2m_min: number[]
   precipitation_sum: number[]
-  weather_code?: number[]
+  weather_code: number[]
   uv_index_max?: number[]
   sunrise?: string[]
   sunset?: string[]

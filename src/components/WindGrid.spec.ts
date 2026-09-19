@@ -42,7 +42,7 @@ describe('WindGrid', () => {
   it('colors speed cells by intensity with theme token classes (kt)', async () => {
     const w = await mk()
     const cells = w.findAll('[data-testid="wind-day"]')[0].findAll('[data-testid="speed-cell"]')
-    // fixtures: 5, 25, 40, 60 km/h => 2.7, 13.5, 21.6, 32.4 kt
+    // fixtures (knots): 3 calm, 13 moderate, 22 strong, 32 extreme
     expect(cells[0].text()).toBe('3')
     expect(cells[0].classes()).toEqual(expect.arrayContaining(['bg-wind-calm', 'text-wind-calm-fg']))
     expect(cells[1].classes()).toContain('bg-wind-moderate')

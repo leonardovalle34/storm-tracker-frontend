@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { arrowRotation, kmhToKnots, windLevel } from './wind'
+import { arrowRotation, windLevel } from './wind'
 
 describe('wind utils', () => {
-  it('converts km/h to knots', () => {
-    expect(kmhToKnots(18.52)).toBeCloseTo(10, 5)
-    expect(kmhToKnots(0)).toBe(0)
-  })
-
   it.each([
     [0, 'calm'],
     [9.9, 'calm'],
