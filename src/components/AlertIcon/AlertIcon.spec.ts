@@ -19,6 +19,7 @@ describe('AlertIcon', () => {
   })
 
   it('has a tooltip and accessible name with category, level, meaning and the not-official note', () => {
+    useUnitsStore().setWindUnit('km/h')
     const w = mk('wind', 'high')
     const text = w.attributes('title')!
     expect(w.attributes('aria-label')).toBe(text)
@@ -48,6 +49,17 @@ describe('AlertIcon', () => {
     useUnitsStore().setTemperature('F')
     expect(mk('heat', 'high').attributes('title')).toContain('100°F a 111°F') // 38 C, 44 C
     expect(mk('heat', 'high').attributes('title')).toContain('Defesa Civil')
+  })
+
+  it('shows the wind limits in knots when that unit is chosen (thresholds stay defined in km/h)', () => {
+    useUnitsStore().setWindUnit('kn')
+    expect(mk('wind', 'high').attributes('title')).toContain('32 a 54 kt') // 60 / 100 km/h
+    expect(mk('wind', 'moderate').attributes('title')).toContain('22 a 32 kt') // 40 / 60 km/h
+    expect(mk('wind', 'severe').attributes('title')).toContain('acima de 54 kt')
+    expect(mk('sea', 'high').attributes('title')).toContain('27 kt') // 50 km/h
+    useUnitsStore().setWindUnit('km/h')
+    expect(mk('wind', 'high').attributes('title')).toContain('60 a 100 km/h')
+    expect(mk('sea', 'severe').attributes('title')).toContain('60 km/h')
   })
 
   it('translates', () => {

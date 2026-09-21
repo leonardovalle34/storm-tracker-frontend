@@ -6,12 +6,13 @@ import { useLocationStore } from '@/stores/location'
 import { useUnitsStore } from '@/stores/units'
 import { useWeatherStore } from '@/stores/weather'
 import { formatTemp } from '@/utils/temperature'
+import { formatWind } from '@/utils/wind'
 import { describeWeather } from '@/utils/weatherCode'
 
 const { t } = useI18n()
 const { location } = storeToRefs(useLocationStore())
 const { forecast } = storeToRefs(useWeatherStore())
-const { temperature: unit } = storeToRefs(useUnitsStore())
+const { temperature: unit, windUnit } = storeToRefs(useUnitsStore())
 
 // The backend may not send `current` yet: then there is nothing to show.
 const current = computed(() => {
@@ -40,6 +41,8 @@ const current = computed(() => {
     >
     <span :title="t(`weather.${current.key}`)" data-testid="current-icon">{{ current.icon }}</span>
     <span v-if="current.temp !== null" data-testid="current-temp">{{ formatTemp(current.temp, unit) }}</span>
-    <span v-if="current.wind !== null" data-testid="current-wind">💨 {{ Math.round(current.wind) }} kt</span>
+    <span v-if="current.wind !== null" data-testid="current-wind"
+      >💨 {{ formatWind(current.wind, windUnit) }}</span
+    >
   </span>
 </template>

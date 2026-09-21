@@ -72,7 +72,7 @@ Rules:
 | `history`    | `list`                                                                                   | Persisted; max 10; most recent first                                                                          |
 | `theme`      | `theme`                                                                                  | Persisted                                                                                                     |
 | `language`   | getters `locale`, `locales`; action `setLocale`                                          | vue-i18n stays the source of truth                                                                            |
-| `units`      | `temperature` (`C`/`F`)                                                                  | Persisted                                                                                                     |
+| `units`      | `temperature` (`C`/`F`), `windUnit` (`kn`/`km/h`)                                        | Persisted                                                                                                     |
 | `scrollSync` | `enabled`                                                                                | Persisted                                                                                                     |
 
 ### Folder structure
@@ -115,7 +115,7 @@ Base URL: environment variable **`VITE_API_BASE_URL`** (default `http://localhos
 **Forecast fields used** (Open-Meteo, requested with `wind_speed_unit=kn`, `timezone=auto`, 16 days, so wind is in **knots**, temperature in **°C**, precipitation in **mm**):
 
 - `daily`: `time`, `temperature_2m_max`, `temperature_2m_min`, `precipitation_sum`, `weather_code`, `uv_index_max`, `sunrise`, `sunset`, and `apparent_temperature_max` (optional: without it there is simply no heat alert; the backend does not request it yet, see findings)
-- `hourly`: `time`, `wind_speed_10m`, `wind_direction_10m`, `precipitation` (rain of the previous 24 h for water visibility). `temperature_2m` is requested by the backend but not used by the UI. `weather_code` per hour is **not** sent; the daily code is used instead.
+- `hourly`: `time`, `temperature_2m` (optional: the day detail chart shows "no hourly data" without it), `weather_code` (optional, per hour), `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m` (knots, optional: without it the gust row is simply omitted), `precipitation` (rain of the previous 24 h for water visibility). The hourly `weather_code` is **not** sent by the backend today; the daily code is repeated on every hour of the day chart.
 - `current` (optional): `temperature_2m`, `weather_code`, `wind_speed_10m` (knots, same request). If absent, the "Now" row is simply omitted.
 
 **Marine fields used** (`hourly`): `time`, `wave_height`, `swell_wave_height`, `swell_wave_direction`, `swell_wave_period`, `sea_level_height_msl`, `sea_surface_temperature`.
@@ -129,7 +129,7 @@ The page (`App.vue`) is, top to bottom: header → location picker (map) → sta
 ### Header
 
 - Sticky navy bar (`bg-brand`, the logo color, **identical in both themes**).
-- Round logo, **location search**, **language select**, **temperature-unit toggle** (°C/°F) and **theme switch**.
+- Round logo, **location search**, **language select**, **temperature-unit toggle** (°C/°F), a **wind-unit toggle** (kt / km/h, same look, right next to it) and **theme switch**.
 - **Location search** (`LocationSearch`, `location` store):
   - Live results from `/weather/geocode`, **debounced 500 ms**, minimum **3 characters** (trimmed). This keeps the public Nominatim under its ~1 request/second policy. Only typing triggers a search; programmatic changes to the field do not.
   - Stale responses are ignored (token per search).
@@ -153,12 +153,15 @@ The page (`App.vue`) is, top to bottom: header → location picker (map) → sta
 - The **last requested day** usually comes back with null data (the model reaches ~15 days); trailing days without data are dropped instead of rendered as zeros. Gaps in the middle are kept.
 - The **alert row** appears only on days that have at least one active alert; quiet days show nothing. Icons are colored yellow / orange / red and each has a tooltip (see [alerts](#alerts)). The **sea** alert appears only when the location has ocean data.
 - The **banner** above the cards appears when any category is **high or severe within the first 3 days**. It lists each category once, at its worst level, with the dates on which it is high or severe, plus a "model estimate, not an official alert" note. Its color is orange (worst = high) or red (worst = severe).
+- **Day detail modal** (`DayDetailModal`, native `<dialog>` like the map modal; closes with the button, backdrop click or Esc). Every card is a `<button>` that opens it on that day. Header: place name, date, the day's weather icon and, on the **first day (today)**, the current temperature (`forecast.current`, if sent) with max/min underneath; other days show max/min. The **◀ ▶** arrows (and ArrowLeft/ArrowRight) move to the previous/next day without closing; they are disabled on the first/last day. The content is only rendered while open.
+- **Hourly temperature chart** (`HourlyTempChart`, data from `buildDayHours` in `utils/dayHours.ts`): **all 24 hours** of the day (not the 3-hour columns). Same technique as the tide chart (`smoothPath`, Catmull-Rom → Bézier, gradient fill, unique gradient id) in the **warm** token (`--warm`, orange/amber) instead of ocean teal. Rows: a small weather icon above each hour (the hour's `weather_code` when the backend sends it, otherwise the day's icon repeated), the curve with a dot per hour, **the temperature of every hour** below the curve (unlike the tide chart, which only labels extrema) and the hour axis `00h`–`23h`. Values follow the temperature unit (°C/°F; the chart scale is unit-independent). A missing hour shows a dash and no dot; with fewer than 2 valid hours the modal says there is no hourly data. The chart scrolls horizontally on narrow screens. On today the axis is still 00h–23h (the backend gives no local "now" hour, so a from-now axis is not implemented).
 - A **scroll-sync toggle** in this header links the three horizontal scrollers (see [Scroll sync](#scroll-sync)).
 
 ### Wind grid (`WindGrid`)
 
 - Hourly columns every **3 h from 03h to 21h** (7 per day), days side by side in one horizontally scrolling table with a sticky label column.
-- Rows: wind speed in **knots** (colored cell) and direction (arrow + tooltip in degrees). Each day header shows the **moon phase**.
+- **Each column is the peak of its 3 h window** (`hour-1 … hour+1`; the 15h column covers 14h, 15h and 16h), not the value at the exact hour, so a spike at 14h or 16h is not lost. This applies to wind speed and gusts (max of each). Wind direction is taken from the same instant as the peak sustained wind, since an angle cannot be maximized. Ties keep the earliest hour; null hours are ignored.
+- Rows: wind speed in **knots** (colored cell), **gust** (`wind_gusts_10m`, knots, shown right below the sustained wind and colored with the same `windLevel` scale; hidden if the backend sends no gusts) and direction (arrow + tooltip in degrees). Each day header shows the **moon phase**.
 - The arrow points **downwind**: `wind_direction_10m` is where the wind comes from, so the rotation is `direction + 180°`.
 - Color = wind level (see [Wind level](#wind-level)); colors come from theme token pairs designed per theme.
 
@@ -168,6 +171,7 @@ Shown only if the location is **coastal** (`isCoastal`: the API returned at leas
 
 - Same 3-hour columns and day layout as the wind grid. Each day header: date, moon phase and a **"long-term estimate"** flag for days at/after the first day whose marine data has gaps (never hidden, only flagged).
 - **Tide curve** per day (see [Tide chart](#tide-chart)).
+- Same peak-of-window rule as the wind grid: swell height is the max of the 3 h window, and swell period and direction come from that same instant. Tide and water temperature stay at the exact column hour. (`wave_height` is not a column, it only decides whether the location is coastal.)
 - Hourly rows: **swell height** (m), **period** (s), **swell direction**, **tide** (m, `sea_level_height_msl`), **water temperature** (chosen unit, one decimal). Missing values show a dash.
 - Below the data rows, per day:
   - **Water visibility** badge: an _estimate_, not a measurement (see [Water visibility](#water-visibility)).
@@ -184,7 +188,7 @@ Shown only if the location is **coastal** (`isCoastal`: the API returned at leas
 - Windy embeds (`embed2.html`, ECMWF, zoom 5) centered on the selected place. **Always:** precipitation, wind, temperature. **Coastal only:** waves, water temperature.
 - Before any place is chosen the maps center on Santos, SP (`-23.96, -46.33`) and only the three "always" maps show.
 - Each map is covered by a transparent button that opens a **modal** with a bigger map (zoom 7, Windy menu visible). `<dialog>` is used, closes with the button, backdrop click or Esc.
-- Wind unit on the maps is knots; temperature unit follows the app setting (`°C`/`°F`).
+- Both units follow the app settings: `metricWind` is `kt` or `km/h`, `metricTemp` is `°C` or `°F`.
 
 ### Footer
 
@@ -198,6 +202,7 @@ Forecast cards, wind grid and ocean grid share one scroll group. Positions are s
 
 - **Loading / error:** while loading a "Loading…" status is shown; if the _forecast_ fails an alert message is shown. A _marine_ failure never breaks the forecast (`Promise.allSettled`): the ocean sections just do not appear.
 - **Moon phase:** fetched per date and **cached across locations** (it depends only on the date). Concurrent requests for the same date share one call. A `400` is shown inline ("Invalid date"); any other failure hides the indicator and is retried next time.
+- **Wind unit** (`windUnit`, `kn` default / `km/h`, key `storm-track:wind-unit`): display-only conversion (API is always knots; km/h = kn × 1.852, rounded after converting: `formatWind` / `toWindUnit` in `utils/wind.ts`). Applies to the "Wind" and "Gust" rows of the wind grid (their labels show the active unit, e.g. "Wind (km/h)"), the current conditions on the map strip, the wind limits in the alert tooltips and the Windy maps. **Classification never uses the converted value**: `windLevel`, `classifyWindSeverity`, `windShoreType`, the activity scoring and the ocean score always work on the original knots, so the colors and alert levels are identical whatever the toggle says.
 - **Temperature unit:** display-only conversion (API is always °C). Applies to forecast cards, current conditions, ocean water temperature and Windy maps. Conversion rounds **after** converting.
 
 ## Classification rules and thresholds
@@ -245,14 +250,14 @@ Bands: `≥ 75` great, `≥ 55` good, `≥ 35` fair, otherwise poor.
 
 `utils/alerts.ts`. Severity is `none | moderate | high | severe`; the UI shows yellow, orange, red.
 
-| Category | Function                              | Moderate  | High                        | Severe                      | Input                                                                                  |
-| -------- | ------------------------------------- | --------- | --------------------------- | --------------------------- | -------------------------------------------------------------------------------------- |
-| Rain     | `classifyRainSeverity(mm)`            | ≥ 20      | ≥ 50                        | ≥ 100                       | daily `precipitation_sum`                                                              |
-| Snow     | `classifySnowSeverity(mm)`            | ≥ 5       | ≥ 15                        | ≥ 30                        | daily `precipitation_sum` (water equivalent, ≈ 1 mm = 1 cm of snow)                    |
-| Heat     | `classifyHeatSeverity(°C)`            | 33 – < 38 | 38 – ≤ 44                   | > 44                        | daily `apparent_temperature_max` ("feels like"), in °C; ignored if the field is absent |
-| Wind     | `classifyWindSeverity(km/h)`          | 40 – < 60 | 60 – ≤ 100                  | > 100                       | strongest **hourly** `wind_speed_10m` of the day, converted from knots (× 1.852)       |
-| Storm    | `classifyStormSeverity(code)`         | code 95   | —                           | code 96 or 99               | daily `weather_code`                                                                   |
-| Sea      | `classifySeaSeverity(waveM, windKmh)` | wave ≥ 2  | wave ≥ 2.5 **or** wind ≥ 50 | wave ≥ 3.5 **or** wind ≥ 60 | daily max `wave_height` and the same daily max wind; **only with ocean data**          |
+| Category | Function                              | Moderate  | High                        | Severe                      | Input                                                                                                                                        |
+| -------- | ------------------------------------- | --------- | --------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rain     | `classifyRainSeverity(mm)`            | ≥ 20      | ≥ 50                        | ≥ 100                       | daily `precipitation_sum`                                                                                                                    |
+| Snow     | `classifySnowSeverity(mm)`            | ≥ 5       | ≥ 15                        | ≥ 30                        | daily `precipitation_sum` (water equivalent, ≈ 1 mm = 1 cm of snow)                                                                          |
+| Heat     | `classifyHeatSeverity(°C)`            | 33 – < 38 | 38 – ≤ 44                   | > 44                        | daily `apparent_temperature_max` ("feels like"), in °C; ignored if the field is absent                                                       |
+| Wind     | `classifyWindSeverity(km/h)`          | 40 – < 60 | 60 – ≤ 100                  | > 100                       | worst of the day's strongest **hourly** `wind_speed_10m` and `wind_gusts_10m`, each converted from knots (× 1.852) and classified on its own |
+| Storm    | `classifyStormSeverity(code)`         | code 95   | —                           | code 96 or 99               | daily `weather_code`                                                                                                                         |
+| Sea      | `classifySeaSeverity(waveM, windKmh)` | wave ≥ 2  | wave ≥ 2.5 **or** wind ≥ 50 | wave ≥ 3.5 **or** wind ≥ 60 | daily max `wave_height` and the same daily max wind; **only with ocean data**                                                                |
 
 Details and edge cases:
 
@@ -309,11 +314,11 @@ Notes: places are considered the same when their coordinates match to 4 decimals
 - **Windy embeds ignore the app language.** The embed URL carries no language parameter, so Windy follows the browser.
 - **Ocean-model reliability drops with distance.** Wave-model data thins out after roughly the first 7–10 days. The code does not hard-code a day: it flags every day **from the first one with missing marine data** as a "long-term estimate" (the cut varies per location).
 - **No reverse geocoding.** A place chosen by map click or by browser geolocation is named by its coordinates (`"-23.9600, -46.3300"`); the backend has no reverse-geocode endpoint. The same name goes into favorites and history.
-- **Alerts use the sustained 10 m wind, not gusts.** Blizzard-like conditions (heavy snow with strong gusts, e.g. gusts around 100 km/h with sustained wind under 15 km/h) produce a **snow** alert but no wind alert. The backend does not request `wind_gusts_10m` or `snowfall`.
+- **The wind alert takes the worse of sustained wind and gusts** (e.g. 14 kt sustained / 28 kt gust raises _moderate_ from the gust). The **sea** alert still uses only the sustained wind. The backend does not request `snowfall`, so a heavy-snow day is classified from the daily total only.
 - **One weather code per day.** The daily code is the worst hour of the day, and alerts and the day icon depend on it. On a frozen day with one thundery hour the _icon_ still shows a thunderstorm even though the alert correctly reads snow.
 - **Alert and activity thresholds are hand-set, not taken from an official standard** (see findings). Rain and snow thresholds in particular are estimates.
 - **The 3-day banner does not look further ahead.** Severe conditions on day 6 appear on that day's card but not in the banner.
-- **Units:** only temperature is switchable. Wind is always knots (alert texts are in km/h); waves and tides are always meters; precipitation always mm.
+- **Units:** only temperature and wind are switchable. Alert thresholds are defined in km/h and shown in the chosen wind unit; waves and tides are always meters; precipitation always mm.
 - **Coastal detection is by data, not geography** (any non-null `wave_height`); a location right at a lake or bay may or may not show ocean sections depending on the model.
 - **Rate limits.** The backend allows 30 requests/minute per client by default; a page load makes 2 requests plus one per distinct visible date for the moon phase (cached), plus geocode requests while typing.
 - **Translations** for French and German have not been reviewed by native speakers.
@@ -326,7 +331,7 @@ Not implemented — listed as planned, not as existing behavior:
 - **Push notifications** (postponed). Nothing for it exists in the code (no service worker, no permission flow).
 - **Phase 2 of the roadmap: history with cache.** The current "history" is only the list of recently selected places; there is no weather history and no response cache beyond the moon-phase cache.
 - **Reverse geocoding** in the backend (to name places picked on the map).
-- **Blizzard / gust alerts**, which need `wind_gusts_10m` and `snowfall` from the backend.
+- **Blizzard alerts**, which need `snowfall` from the backend.
 - A configurable alert window and sources for the thresholds (see below).
 
 ## Discrepancies and findings

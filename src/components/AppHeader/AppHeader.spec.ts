@@ -19,6 +19,13 @@ describe('AppHeader', () => {
     expect(cls.some((c) => c.startsWith('dark:bg'))).toBe(false)
   })
 
+  it('puts the wind unit toggle right next to the temperature toggle', () => {
+    const groups = w.findAll('[role="group"]')
+    const temp = groups.findIndex((g) => g.find('[data-unit="C"]').exists())
+    expect(temp).toBeGreaterThanOrEqual(0)
+    expect(groups[temp + 1].find('[data-unit="km/h"]').exists()).toBe(true)
+  })
+
   it('contains search, language selector and theme toggle', () => {
     expect(w.find('input[role="combobox"]').exists()).toBe(true)
     expect(w.find('select').exists()).toBe(true)

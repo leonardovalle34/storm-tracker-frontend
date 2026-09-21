@@ -22,19 +22,53 @@ function groupDays<C>(times: string[], build: (i: number, hour: number) => C): D
   return [...days].map(([date, columns]) => ({ date, columns }))
 }
 
+/**
+ * Index of the largest non-null value in the 3h window centred on `i` (i-1..i+1: the 15h column
+ * covers 14h, 15h, 16h), or -1 if the whole window is empty. Ties keep the earliest hour.
+ */
+function peakIndex(values: readonly (number | null | undefined)[], i: number): number {
+  let best = -1
+  for (let j = Math.max(0, i - 1); j <= Math.min(values.length - 1, i + 1); j++) {
+    const v = values[j]
+    if (v == null) continue
+    if (best === -1 || v > (values[best] as number)) best = j
+  }
+  return best
+}
+
+const maxIn = (values: readonly (number | null | undefined)[], i: number): number | null => {
+  const j = peakIndex(values, i)
+  return j === -1 ? null : (values[j] as number)
+}
+
 export interface WindColumn {
   hour: number
   knots: number
   direction: number
   level: WindLevel
+  /** null when the API has no gust value for the hour */
+  gustKnots: number | null
+  gustLevel: WindLevel | null
 }
 
 export function buildWindDays(
-  h: Pick<HourlyForecast, 'time' | 'wind_speed_10m' | 'wind_direction_10m'>,
+  h: Pick<HourlyForecast, 'time' | 'wind_speed_10m' | 'wind_direction_10m' | 'wind_gusts_10m'>,
 ): Day<WindColumn>[] {
   return groupDays(h.time, (i, hour) => {
-    const knots = h.wind_speed_10m[i] // the API already returns knots (wind_speed_unit=kn)
-    return { hour, knots, direction: h.wind_direction_10m[i], level: windLevel(knots) }
+    // Each column is the PEAK of its 3h window (hour-1..hour+1), so a spike at 14h/16h is not lost.
+    // The API already returns knots (wind_speed_unit=kn).
+    const peak = peakIndex(h.wind_speed_10m, i)
+    const at = peak === -1 ? i : peak // direction always comes from the same instant as the speed
+    const knots = h.wind_speed_10m[at]
+    const gustKnots = h.wind_gusts_10m ? maxIn(h.wind_gusts_10m, i) : null // same unit as the wind, so same scale
+    return {
+      hour,
+      knots,
+      direction: h.wind_direction_10m[at],
+      level: windLevel(knots),
+      gustKnots,
+      gustLevel: gustKnots === null ? null : windLevel(gustKnots),
+    }
   })
 }
 
@@ -66,14 +100,19 @@ export function buildMarineDays(h: MarineHourly): MarineDay[] {
     if (!tideByDate.has(date)) tideByDate.set(date, Array<number | null>(24).fill(null))
     tideByDate.get(date)![Number(t.slice(11, 13))] = h.sea_level_height_msl[i] ?? null
   })
-  return groupDays(h.time, (i, hour) => ({
-    hour,
-    swell: h.swell_wave_height[i] ?? null,
-    period: h.swell_wave_period[i] ?? null,
-    swellDir: h.swell_wave_direction[i] ?? null,
-    tide: h.sea_level_height_msl[i] ?? null,
-    waterTemp: h.sea_surface_temperature[i] ?? null,
-  })).map((d) => {
+  return groupDays(h.time, (i, hour) => {
+    // Swell is the PEAK of the 3h window; period and direction come from that same instant.
+    const peak = peakIndex(h.swell_wave_height, i)
+    const at = peak === -1 ? i : peak
+    return {
+      hour,
+      swell: peak === -1 ? null : h.swell_wave_height[peak],
+      period: h.swell_wave_period[at] ?? null,
+      swellDir: h.swell_wave_direction[at] ?? null,
+      tide: h.sea_level_height_msl[i] ?? null,
+      waterTemp: h.sea_surface_temperature[i] ?? null,
+    }
+  }).map((d) => {
     const idx = h.time.flatMap((t, i) => (t.startsWith(d.date) ? [i] : []))
     const missing = (i: number) => h.sea_level_height_msl[i] == null || h.swell_wave_height[i] == null
     const present = (i: number) => h.sea_level_height_msl[i] != null || h.swell_wave_height[i] != null

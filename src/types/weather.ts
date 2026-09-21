@@ -23,6 +23,8 @@ export interface HourlyForecast {
   precipitation?: number[]
   wind_speed_10m: number[]
   wind_direction_10m: number[]
+  /** knots, same unit and scale as wind_speed_10m; optional until every backend sends it */
+  wind_gusts_10m?: (number | null)[]
   /** not sent by the backend yet; used per hour when present, else the daily code applies */
   weather_code?: number[]
 }

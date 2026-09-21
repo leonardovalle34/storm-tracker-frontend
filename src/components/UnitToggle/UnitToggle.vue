@@ -24,7 +24,7 @@ const options: TempUnit[] = ['C', 'F']
       type="button"
       :data-unit="u"
       :aria-pressed="temperature === u"
-      class="h-7 min-w-9 rounded px-2 font-medium focus-visible:outline-2 focus-visible:outline-white"
+      class="h-7 min-w-8 rounded px-1.5 font-medium sm:min-w-9 sm:px-2 focus-visible:outline-2 focus-visible:outline-white"
       :class="temperature === u ? 'bg-white text-brand' : 'text-brand-fg hover:bg-white/10'"
       @click="unitsStore.setTemperature(u)"
     >

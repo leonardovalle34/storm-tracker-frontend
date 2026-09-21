@@ -15,8 +15,15 @@ export function makeForecast(days = ['2026-09-19', '2026-09-20']): ForecastRespo
     },
     hourly: {
       time,
-      wind_speed_10m: time.map((_, i) => (i % 24 === 3 ? 3 : i % 24 === 6 ? 13 : i % 24 === 9 ? 22 : 32)), // knots
+      temperature_2m: time.map((_, i) => 20 + (i % 24) / 2), // °C: 20 at 0h .. 31.5 at 23h
+      // knots; off-column hours stay calm so the 3h max window keeps the column value
+      wind_speed_10m: time.map((_, i) =>
+        i % 3 ? 0 : i % 24 === 3 ? 3 : i % 24 === 6 ? 13 : i % 24 === 9 ? 22 : 32,
+      ),
       wind_direction_10m: time.map((_, i) => (i % 24) * 10),
+      wind_gusts_10m: time.map((_, i) =>
+        i % 3 ? 0 : i % 24 === 3 ? 8 : i % 24 === 6 ? 19 : i % 24 === 9 ? 29 : 41,
+      ), // knots
     },
   }
 }

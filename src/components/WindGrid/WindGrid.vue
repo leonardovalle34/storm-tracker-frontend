@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSyncedScroll } from '@/composables/useSyncedScroll'
+import { useUnitsStore } from '@/stores/units'
 import type { HourlyForecast } from '@/types/weather'
 import { formatDay } from '@/utils/date'
 import {
@@ -14,13 +16,16 @@ import {
   tableWidth,
 } from '@/utils/gridStyles'
 import { buildWindDays } from '@/utils/hourly'
-import type { WindLevel } from '@/utils/wind'
+import { formatWind, type WindLevel } from '@/utils/wind'
 import DayHeader from '@/components/DayHeader/DayHeader.vue'
 import MoonPhase from '@/components/MoonPhase/MoonPhase.vue'
 import WindDirection from '@/components/WindDirection/WindDirection.vue'
 
 const props = defineProps<{ hourly: HourlyForecast }>()
 const { t, locale } = useI18n()
+const { windUnit } = storeToRefs(useUnitsStore())
+// unit name in the row labels: 'kt'/'nós'... for knots, 'km/h' otherwise
+const unitLabel = computed(() => t(`wind.unit.${windUnit.value === 'km/h' ? 'kmh' : 'kn'}`))
 
 const scroller = ref<HTMLElement | null>(null)
 useSyncedScroll(scroller, dayPitchPx)
@@ -38,6 +43,7 @@ const days = computed(() => buildWindDays(props.hourly))
 const columns = computed(() =>
   days.value.flatMap((d) => d.columns.map((c, i) => ({ ...c, date: d.date, first: i === 0 }))),
 )
+const hasGusts = computed(() => columns.value.some((c) => c.gustKnots !== null))
 const label =
   'sticky left-0 z-10 border-r border-line bg-surface px-2 text-left text-xs font-normal text-muted'
 </script>
@@ -65,7 +71,7 @@ const label =
         </DayHeader>
         <tbody>
           <tr>
-            <th scope="row" :class="label">{{ t('wind.speed') }}</th>
+            <th scope="row" :class="label">{{ t('wind.speed', { unit: unitLabel }) }}</th>
             <td
               v-for="c in columns"
               :key="`${c.date}-${c.hour}`"
@@ -74,7 +80,20 @@ const label =
               class="font-semibold"
               :class="[CELL, LEVEL_CLASS[c.level], c.first && DAY_START]"
             >
-              {{ Math.round(c.knots) }}
+              {{ formatWind(c.knots, windUnit, false) }}
+            </td>
+          </tr>
+          <tr v-if="hasGusts">
+            <th scope="row" :class="label">{{ t('wind.gust', { unit: unitLabel }) }}</th>
+            <td
+              v-for="c in columns"
+              :key="`${c.date}-${c.hour}`"
+              data-testid="gust-cell"
+              :title="c.gustLevel ? t(`wind.level.${c.gustLevel}`) : undefined"
+              class="font-semibold"
+              :class="[CELL, c.gustLevel ? LEVEL_CLASS[c.gustLevel] : 'text-muted', c.first && DAY_START]"
+            >
+              {{ c.gustKnots === null ? '–' : formatWind(c.gustKnots, windUnit, false) }}
             </td>
           </tr>
           <tr>

@@ -18,8 +18,11 @@ vi.mock('@/services/weatherService', () => ({
 describe('OceanGrid', () => {
   setLocale('pt')
   const marine = makeMarine(true, dayList(2))
-  marine.hourly.swell_wave_height[3] = null // day 1, 3h
-  marine.hourly.swell_wave_direction[3] = null
+  // day 1, 3h column: the whole 2h-4h window is empty
+  for (const i of [2, 3, 4]) {
+    marine.hourly.swell_wave_height[i] = null
+    marine.hourly.swell_wave_direction[i] = null
+  }
   const w = mount(OceanGrid, { props: { hourly: marine.hourly }, global: { plugins: [i18n] } })
 
   it('shows the water temperature in Fahrenheit (label and values) when chosen', async () => {

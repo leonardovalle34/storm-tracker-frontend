@@ -5,11 +5,12 @@ import { useI18n } from 'vue-i18n'
 import type { ActiveSeverity, AlertCategory } from '@/utils/alerts'
 import { useUnitsStore } from '@/stores/units'
 import { formatTemp } from '@/utils/temperature'
+import { toWindUnit } from '@/utils/wind'
 import { TONE_CLASS, type Tone } from '@/utils/tones'
 
 const props = defineProps<{ category: AlertCategory; severity: ActiveSeverity }>()
 const { t } = useI18n()
-const { temperature: unit } = storeToRefs(useUnitsStore())
+const { temperature: unit, windUnit } = storeToRefs(useUnitsStore())
 
 const ICON: Record<AlertCategory, string> = {
   rain: '🌧️',
@@ -31,9 +32,18 @@ const description = computed(() => {
     b: formatTemp(38, unit.value),
     c: formatTemp(44, unit.value),
   }
+  // the wind thresholds are defined in km/h (see alerts.ts); shown in the chosen unit
+  const kmh = (v: number) => String(Math.round(toWindUnit(v / 1.852, windUnit.value)))
+  const wind = {
+    v40: kmh(40),
+    v50: kmh(50),
+    v60: kmh(60),
+    v100: kmh(100),
+    u: windUnit.value === 'km/h' ? 'km/h' : 'kt',
+  }
   return [
     `${t(`alerts.category.${category}`)} (${t(`alerts.severity.${severity}`)})`,
-    t(`alerts.text.${category}.${severity}`, limits),
+    t(`alerts.text.${category}.${severity}`, { ...limits, ...wind }),
     t(`alerts.disclaimer.${category === 'sea' ? 'sea' : 'land'}`),
   ].join(' — ')
 })

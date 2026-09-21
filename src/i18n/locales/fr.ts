@@ -24,6 +24,8 @@ export default {
     themeToggle: 'Basculer entre thème clair et sombre',
     temperatureUnit: 'Unité de température',
     temperatureUnitTip: 'Bascule les températures entre Celsius et Fahrenheit.',
+    windUnit: 'Unité du vent',
+    windUnitTip: 'Bascule la vitesse du vent entre nœuds et km/h.',
   },
   footer: { madeBy: 'Réalisé par', company: 'Nexus Tecnologia' },
   scrollSync: {
@@ -43,7 +45,19 @@ export default {
     label: 'Carte satellite',
     hint: 'Cliquez sur la carte pour sélectionner un lieu.',
   },
-  forecast: { title: 'Prévisions à 16 jours', precipitation: 'Précipitations', max: 'Max', min: 'Min' },
+  forecast: {
+    title: 'Prévisions à 16 jours',
+    precipitation: 'Précipitations',
+    max: 'Max',
+    min: 'Min',
+    tempChart: 'Courbe de température horaire',
+    day: {
+      prev: 'Jour précédent',
+      next: 'Jour suivant',
+      close: 'Fermer',
+      noHourly: 'Pas de données horaires de température pour ce jour.',
+    },
+  },
   alerts: {
     banner: 'Attention pour les {days} prochains jours',
     bannerNote: 'Estimation d’un modèle de prévision, pas une alerte officielle.',
@@ -66,9 +80,9 @@ export default {
         severe: 'Pluie très forte prévue (100 mm ou plus sur la journée).',
       },
       wind: {
-        moderate: 'Vent de 40 à 60 km/h prévu.',
-        high: 'Vent de 60 à 100 km/h prévu (coup de vent possible).',
-        severe: 'Vent de plus de 100 km/h prévu (tempête).',
+        moderate: 'Vent de {v40} à {v60} {u} prévu.',
+        high: 'Vent de {v60} à {v100} {u} prévu (coup de vent possible).',
+        severe: 'Vent de plus de {v100} {u} prévu (tempête).',
       },
       storm: {
         moderate: 'Orage prévu.',
@@ -77,8 +91,8 @@ export default {
       },
       sea: {
         moderate: 'Vagues de 2 m ou plus prévues.',
-        high: 'Vagues de 2,5 m ou plus, ou vent de 50 km/h ou plus. Déconseillé aux petites embarcations.',
-        severe: 'Vagues de 3,5 m ou plus, ou vent de 60 km/h ou plus. Éviter la navigation.',
+        high: 'Vagues de 2,5 m ou plus, ou vent de {v50} {u} ou plus. Déconseillé aux petites embarcations.',
+        severe: 'Vagues de 3,5 m ou plus, ou vent de {v60} {u} ou plus. Éviter la navigation.',
       },
     },
     disclaimer: {
@@ -100,7 +114,9 @@ export default {
   },
   wind: {
     title: 'Vent',
-    speed: 'Vent (kt)',
+    speed: 'Vent ({unit})',
+    gust: 'Rafale ({unit})',
+    unit: { kn: 'kt', kmh: 'km/h' },
     direction: 'Direction',
     hour: 'Heure',
     level: { calm: 'Calme', moderate: 'Modéré', strong: 'Fort', extreme: 'Extrême' },

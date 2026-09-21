@@ -13,11 +13,15 @@ import { TONE_CLASS } from '@/utils/tones'
 import { formatDay } from '@/utils/date'
 import { describeWeather } from '@/utils/weatherCode'
 import ConditionBadge from '@/components/ConditionBadge/ConditionBadge.vue'
+import DayDetailModal from '@/components/DayDetailModal/DayDetailModal.vue'
 
 const props = defineProps<{
   daily: DailyForecast
-  /** for the wind alert */
-  hourly?: Pick<HourlyForecast, 'time' | 'wind_speed_10m'> | null
+  /** for the wind alert (sustained wind and gusts) */
+  hourly?: Pick<
+    HourlyForecast,
+    'time' | 'wind_speed_10m' | 'wind_gusts_10m' | 'temperature_2m' | 'weather_code'
+  > | null
   /** only when the location has ocean data: turns on the sea alert */
   marine?: MarineHourly | null
 }>()
@@ -31,6 +35,9 @@ useSyncedScroll(scroller, () => {
   const measured = a && b ? b.offsetLeft - a.offsetLeft : 0
   return measured > 0 ? measured : 124
 })
+
+// day whose detail modal is open (index in daily.time); null = closed
+const openDay = ref<number | null>(null)
 
 const dayAlerts = computed(() => buildDayAlerts(props))
 const warnings = computed(() => upcomingWarnings(dayAlerts.value))
@@ -82,13 +89,15 @@ const cards = computed(() =>
       <span class="text-xs opacity-90">{{ t('alerts.bannerNote') }}</span>
     </div>
     <div ref="scroller" data-testid="day-cards" class="flex gap-3 overflow-x-auto pb-2">
-      <article
-        v-for="c in cards"
+      <button
+        v-for="(c, i) in cards"
         :key="c.date"
+        type="button"
         data-testid="day-card"
-        class="flex w-28 shrink-0 flex-col items-center gap-1 rounded-lg border border-line bg-surface p-3 text-center"
+        class="flex w-28 shrink-0 cursor-pointer flex-col items-center gap-1 rounded-lg border border-line bg-surface p-3 text-center hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent"
+        @click="openDay = i"
       >
-        <p class="text-sm font-medium capitalize">{{ c.label }}</p>
+        <span class="block text-sm font-medium capitalize">{{ c.label }}</span>
         <span
           data-testid="weather-icon"
           role="img"
@@ -97,11 +106,13 @@ const cards = computed(() =>
           class="text-3xl"
           >{{ c.weather.icon }}</span
         >
-        <p class="text-base font-semibold">
+        <span class="block text-base font-semibold">
           {{ c.max }} <span class="font-normal text-muted">{{ c.min }}</span>
-        </p>
-        <p class="text-xs text-muted" :title="t('forecast.precipitation')">💧 {{ c.rain }} mm</p>
-        <p v-if="c.uv !== null" data-testid="uv" class="mt-0.5"><ConditionBadge kind="uv" :value="c.uv" /></p>
+        </span>
+        <span class="block text-xs text-muted" :title="t('forecast.precipitation')">💧 {{ c.rain }} mm</span>
+        <span v-if="c.uv !== null" data-testid="uv" class="mt-0.5 block"
+          ><ConditionBadge kind="uv" :value="c.uv"
+        /></span>
         <!-- only days with something active get the row; quiet days stay clean -->
         <div
           v-if="c.alerts.length"
@@ -110,7 +121,8 @@ const cards = computed(() =>
         >
           <AlertIcon v-for="a in c.alerts" :key="a.category" :category="a.category" :severity="a.severity" />
         </div>
-      </article>
+      </button>
     </div>
+    <DayDetailModal v-model:index="openDay" :daily="daily" :hourly="hourly" />
   </div>
 </template>

@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { i18n, setLocale } from '@/i18n'
+import { useUnitsStore } from '@/stores/units'
 import ModelMaps from './ModelMaps.vue'
 
 const location = { name: 'Santos', latitude: -23.96, longitude: -46.33 }
@@ -18,6 +19,18 @@ const overlays = (w: ReturnType<typeof mk>) =>
 
 describe('ModelMaps', () => {
   setLocale('pt')
+
+  it('asks Windy for the chosen wind unit', async () => {
+    const w = mk(false)
+    const units = () =>
+      w
+        .findAll('[data-testid="model-frame"]')
+        .map((f) => new URL(f.attributes('src')!).searchParams.get('metricWind'))
+    expect(units()).toEqual(['kt', 'kt', 'kt'])
+    useUnitsStore().setWindUnit('km/h')
+    await w.vm.$nextTick()
+    expect(units()).toEqual(['km/h', 'km/h', 'km/h'])
+  })
 
   it('always shows precipitation (rain overlay), wind and temperature, in that order', () => {
     expect(overlays(mk(false))).toEqual(['rain', 'wind', 'temp'])
