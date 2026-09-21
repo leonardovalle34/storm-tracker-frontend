@@ -1,4 +1,5 @@
 import type { TempUnit } from './temperature'
+import type { WindUnit } from './wind'
 
 export type WindyOverlay = 'rain' | 'wind' | 'temp' | 'waves' | 'sst'
 
@@ -8,6 +9,7 @@ export function windyUrl(
   overlay: WindyOverlay,
   expanded = false,
   tempUnit: TempUnit = 'C',
+  windUnit: WindUnit = 'kn',
 ): string {
   const p = new URLSearchParams({
     lat: String(loc.latitude),
@@ -24,7 +26,7 @@ export function windyUrl(
     calendar: 'now',
     type: 'map',
     location: 'coordinates',
-    metricWind: 'kt',
+    metricWind: windUnit === 'km/h' ? 'km/h' : 'kt',
     metricTemp: `°${tempUnit}`,
     radarRange: '-1',
   })

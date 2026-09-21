@@ -24,6 +24,46 @@ describe('ForecastCards', () => {
     expect(c.get('[data-testid="weather-icon"]').attributes('aria-label')).toBe('Chuva')
   })
 
+  describe('day detail modal', () => {
+    const mkHourly = () => {
+      const f = makeForecast(['2026-09-19', '2026-09-20', '2026-09-21'])
+      return mount(ForecastCards, {
+        props: { daily: f.daily, hourly: f.hourly },
+        global: { plugins: [i18n] },
+      })
+    }
+
+    it('every card is a button that opens the detail of THAT day', async () => {
+      const m = mkHourly()
+      const cards = m.findAll('[data-testid="day-card"]')
+      expect(cards.every((c) => c.element.tagName === 'BUTTON')).toBe(true)
+      expect(m.get('dialog').attributes('open')).toBeUndefined()
+      await cards[2].trigger('click')
+      expect(m.get('dialog').attributes('open')).toBeDefined()
+      expect(m.get('[data-testid="day-date"]').text()).toContain('21/09')
+    })
+
+    it('navigating inside the modal changes the day without closing it', async () => {
+      const m = mkHourly()
+      await m.findAll('[data-testid="day-card"]')[1].trigger('click')
+      await m.get('[data-testid="day-next"]').trigger('click')
+      expect(m.get('dialog').attributes('open')).toBeDefined()
+      expect(m.get('[data-testid="day-date"]').text()).toContain('21/09')
+      await m.get('[data-testid="day-prev"]').trigger('click')
+      await m.get('[data-testid="day-prev"]').trigger('click')
+      expect(m.get('[data-testid="day-date"]').text()).toContain('19/09')
+    })
+
+    it('closing resets it, and reopening another card shows that card', async () => {
+      const m = mkHourly()
+      await m.findAll('[data-testid="day-card"]')[0].trigger('click')
+      await m.get('[data-testid="day-close"]').trigger('click')
+      expect(m.get('dialog').attributes('open')).toBeUndefined()
+      await m.findAll('[data-testid="day-card"]')[1].trigger('click')
+      expect(m.get('[data-testid="day-date"]').text()).toContain('20/09')
+    })
+  })
+
   it('uses weather_code for the icon, ignoring precipitation', () => {
     const d = { ...daily, weather_code: [0, 95, 71], precipitation_sum: [30, 0, 0] }
     const m = mount(ForecastCards, { props: { daily: d }, global: { plugins: [i18n] } })
@@ -70,7 +110,11 @@ describe('ForecastCards', () => {
   describe('alerts', () => {
     const dates = ['2026-09-19', '2026-09-20', '2026-09-21', '2026-09-22']
     const base = makeForecast(dates)
-    const calm = { ...base.hourly, wind_speed_10m: base.hourly.wind_speed_10m.map(() => 5) }
+    const calm = {
+      ...base.hourly,
+      wind_speed_10m: base.hourly.wind_speed_10m.map(() => 5),
+      wind_gusts_10m: base.hourly.wind_speed_10m.map(() => 8),
+    }
     const mkAlerts = (
       over: Partial<typeof base.daily> = {},
       hourly: typeof calm | null = calm,
@@ -142,6 +186,13 @@ describe('ForecastCards', () => {
       const cards = w.findAll('[data-testid="day-card"]')
       expect(cards[1].get('[data-category="wind"]').attributes('data-severity')).toBe('severe')
       expect(cards[0].find('[data-category="wind"]').exists()).toBe(false)
+    })
+
+    it('a gust over the limit raises the wind alert even with calm sustained wind (14 kt / 28 kt -> moderate)', () => {
+      const h = { ...calm, wind_gusts_10m: calm.wind_gusts_10m.map((v, i) => (i === 5 ? 28 : v)) }
+      const cards = mkAlerts({}, h).findAll('[data-testid="day-card"]')
+      expect(cards[0].get('[data-category="wind"]').attributes('data-severity')).toBe('moderate')
+      expect(cards[1].find('[data-category="wind"]').exists()).toBe(false)
     })
 
     it('banner: appears for high/severe within the next 3 days and summarizes category, level and days', () => {

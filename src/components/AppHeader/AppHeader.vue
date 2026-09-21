@@ -5,6 +5,7 @@ import LanguageSelect from '@/components/LanguageSelect/LanguageSelect.vue'
 import LocationSearch from '@/components/LocationSearch/LocationSearch.vue'
 import ThemeToggle from '@/components/ThemeToggle/ThemeToggle.vue'
 import UnitToggle from '@/components/UnitToggle/UnitToggle.vue'
+import WindUnitToggle from '@/components/WindUnitToggle/WindUnitToggle.vue'
 
 const { t } = useI18n()
 </script>
@@ -14,14 +15,16 @@ const { t } = useI18n()
   <header class="sticky top-0 z-[1100] bg-brand text-brand-fg shadow">
     <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
       <img :src="roundLogo" :alt="t('app.title')" class="h-14 w-14 shrink-0 rounded-full" />
-      <div class="order-last w-full sm:order-none sm:ml-auto sm:w-auto sm:min-w-72 sm:flex-1 sm:max-w-md">
+      <!-- phone: logo + theme on the first row, unit/language controls on the second, search last -->
+      <div class="order-4 w-full sm:order-none sm:ml-auto sm:w-auto sm:min-w-72 sm:flex-1 sm:max-w-md">
         <LocationSearch />
       </div>
-      <div class="ml-auto flex items-center gap-2 sm:ml-0">
+      <div class="order-3 flex w-full flex-wrap items-center gap-2 sm:order-none sm:w-auto">
         <LanguageSelect />
         <UnitToggle />
-        <ThemeToggle />
+        <WindUnitToggle />
       </div>
+      <div class="order-2 ml-auto sm:order-none sm:ml-0"><ThemeToggle /></div>
     </div>
   </header>
 </template>

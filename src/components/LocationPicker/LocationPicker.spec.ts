@@ -185,6 +185,14 @@ describe('LocationPicker', () => {
       expect(w.get('[data-testid="current-wind"]').text()).toContain('12 kt')
     })
 
+    it('shows the wind in km/h when that unit is chosen', async () => {
+      const w = await pick({ temperature_2m: 27.6, weather_code: 63, wind_speed_10m: 12.4 })
+      useUnitsStore().setWindUnit('km/h')
+      await nextTick()
+      expect(w.get('[data-testid="current-wind"]').text()).toContain('23 km/h')
+      expect(w.get('[data-testid="current-wind"]').text()).not.toContain('kt')
+    })
+
     it('sits in a row at the bottom of the collapsed strip, under the name bar', async () => {
       const w = await pick({ temperature_2m: 20, weather_code: 0, wind_speed_10m: 5 })
       const card = w.get('[data-testid="strip-card"]')

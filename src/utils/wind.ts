@@ -1,3 +1,20 @@
+export type WindUnit = 'kn' | 'km/h'
+
+const KMH_PER_KNOT = 1.852
+export const knotsToKmh = (kt: number) => kt * KMH_PER_KNOT
+
+/**
+ * DISPLAY ONLY. The API always sends knots; classification and colors (windLevel, classifyWindSeverity,
+ * windShoreType, activity scores...) keep using the original knots, never this converted number.
+ */
+export const toWindUnit = (knots: number, unit: WindUnit) => (unit === 'km/h' ? knotsToKmh(knots) : knots)
+
+/** "12 kt" / "23 km/h" (`withUnit` false gives just the number). Rounds after converting. */
+export const formatWind = (knots: number, unit: WindUnit, withUnit = true): string => {
+  const n = Math.round(toWindUnit(knots, unit))
+  return withUnit ? `${n} ${unit === 'km/h' ? 'km/h' : 'kt'}` : String(n)
+}
+
 export type WindLevel = 'calm' | 'moderate' | 'strong' | 'extreme'
 
 /** Intensity bands in knots: <10 calm, <20 moderate, <30 strong, otherwise extreme. */

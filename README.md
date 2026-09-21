@@ -2,7 +2,7 @@
 
 A web app that shows the weather and sea forecast for any point on the planet: a 16-day forecast, wind, swell, tides, moon phases, recommended activities (surf, kite, swimming, diving) and alerts for rain, snow, heat, wind, storms and sea conditions.
 
-The frontend has no user accounts and no database of its own: preferences (theme, language, temperature unit, favorites, history) live in the browser's `localStorage`. Data comes from the backend (`storm-tracker-backend`), which queries Open-Meteo and Nominatim.
+The frontend has no user accounts and no database of its own: preferences (theme, language, temperature and wind units, favorites, history) live in the browser's `localStorage`. Data comes from the backend (`storm-tracker-backend`), which queries Open-Meteo and Nominatim.
 
 ## Table of contents
 
@@ -27,12 +27,12 @@ The frontend has no user accounts and no database of its own: preferences (theme
 - **Choose a location** by search (Nominatim autocomplete), by clicking the satellite map (Leaflet + Esri), or through the browser's geolocation (asked only once).
 - **Favorites** (a star on the map strip and on every search result, up to 20) and **history** of the last 10 locations. With the search box empty and focused, the dropdown lists "Favorites" and "Recent searches".
 - **Current conditions** ("Now": icon, temperature and wind) on the map strip, whether the map is collapsed or open.
-- **16-day forecast** as day cards, with max/min temperature, rain, UV index and per-day alerts.
-- **Wind grid** and **ocean grid** (swell, period, direction, tide with chart, water temperature, water visibility and recommended activities), with optional synchronized scrolling across forecast, wind and ocean.
+- **16-day forecast** as day cards, with max/min temperature, rain, UV index and per-day alerts. Clicking a card opens a **day detail** with the full 24-hour temperature curve.
+- **Wind grid** (sustained wind, gusts and direction) and **ocean grid** (swell, period, direction, tide with chart, water temperature, water visibility and recommended activities), with optional synchronized scrolling across forecast, wind and ocean.
 - **Moon phase** for each day.
 - **Model maps** (Windy): rain, wind and temperature always; waves and water temperature at coastal locations.
 - **Alerts** for rain, snow, heat, wind, storms and sea, with a banner for the next 3 days.
-- **Theme** (light/dark), **language** (pt, en, es, fr, de) and **temperature unit** (°C/°F).
+- **Theme** (light/dark), **language** (pt, en, es, fr, de) **temperature unit** (°C/°F) and **wind unit** (kt / km/h).
 
 ## Tech stack
 
@@ -186,7 +186,7 @@ Component ──► Store (action) ──► Service (HTTP) ──► Store (upd
 | `history`    | Last selected locations (persisted); `location.select` writes here                     |
 | `theme`      | Light/dark theme (persisted)                                                           |
 | `language`   | Active language (vue-i18n remains the source of truth)                                 |
-| `units`      | Temperature unit °C/°F (persisted)                                                     |
+| `units`      | Temperature unit °C/°F and wind unit kt / km/h (persisted)                             |
 | `scrollSync` | Synchronized-scrolling preference (persisted)                                          |
 
 ## Project structure
@@ -198,9 +198,9 @@ src/
 ├── style.css                # Tailwind + theme tokens (light/dark)
 ├── components/              # one component per folder: Name/Name.vue + Name.spec.ts
 │   ├── AppHeader/  AppFooter/  LocationSearch/  LocationPicker/  LocationMap/
-│   ├── CurrentWeather/  ForecastCards/  WindGrid/  OceanGrid/  TideChart/
+│   ├── CurrentWeather/  ForecastCards/  DayDetailModal/  HourlyTempChart/  WindGrid/  OceanGrid/  TideChart/
 │   ├── ModelMaps/  MoonPhase/  AlertIcon/  ConditionBadge/  ActivityCell/
-│   └── ThemeToggle/  LanguageSelect/  UnitToggle/  SyncToggle/  FavoriteStar/ ...
+│   └── ThemeToggle/  LanguageSelect/  UnitToggle/  WindUnitToggle/  SyncToggle/  FavoriteStar/ ...
 ├── stores/                  # Pinia (one store per file, with a spec)
 ├── services/                # HTTP calls (weatherService, geocodeService, http)
 ├── composables/             # reusable logic without state
@@ -235,7 +235,7 @@ These are **estimates from a forecast model, not official alerts**. Every icon h
 | Rain     | ≥ 20 mm    | ≥ 50 mm                        | ≥ 100 mm                       | daily precipitation                                                                   |
 | Snow     | ≥ 5 mm     | ≥ 15 mm                        | ≥ 30 mm                        | daily precipitation (water equivalent), on a snow day                                 |
 | Heat     | 33–38 °C   | 38–44 °C                       | > 44 °C                        | daily max apparent temperature (`apparent_temperature_max`; the backend must send it) |
-| Wind     | 40–60 km/h | 60–100 km/h                    | > 100 km/h                     | strongest hourly wind of the day (knots → km/h)                                       |
+| Wind     | 40–60 km/h | 60–100 km/h                    | > 100 km/h                     | worse of the day's strongest hourly wind and gust (knots → km/h)                      |
 | Storm    | code 95    | —                              | code 96 or 99                  | daily `weather_code`                                                                  |
 | Sea      | wave ≥ 2 m | wave ≥ 2.5 m or wind ≥ 50 km/h | wave ≥ 3.5 m or wind ≥ 60 km/h | only where ocean data exists                                                          |
 

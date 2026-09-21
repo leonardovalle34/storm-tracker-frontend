@@ -24,6 +24,8 @@ export default {
     themeToggle: 'Toggle light/dark theme',
     temperatureUnit: 'Temperature unit',
     temperatureUnitTip: 'Switches temperatures between Celsius and Fahrenheit.',
+    windUnit: 'Wind unit',
+    windUnitTip: 'Switches wind speed between knots and km/h.',
   },
   footer: { madeBy: 'Made by', company: 'Nexus Tecnologia' },
   scrollSync: {
@@ -43,7 +45,19 @@ export default {
     label: 'Satellite map',
     hint: 'Click the map to select a location.',
   },
-  forecast: { title: '16-day forecast', precipitation: 'Precipitation', max: 'Max', min: 'Min' },
+  forecast: {
+    title: '16-day forecast',
+    precipitation: 'Precipitation',
+    max: 'Max',
+    min: 'Min',
+    tempChart: 'Hourly temperature curve',
+    day: {
+      prev: 'Previous day',
+      next: 'Next day',
+      close: 'Close',
+      noHourly: 'No hourly temperature data for this day.',
+    },
+  },
   alerts: {
     banner: 'Heads-up for the next {days} days',
     bannerNote: 'Forecast-model estimate, not an official alert.',
@@ -66,9 +80,9 @@ export default {
         severe: 'Very heavy rain expected (100 mm or more for the day).',
       },
       wind: {
-        moderate: 'Wind of 40 to 60 km/h expected.',
-        high: 'Wind of 60 to 100 km/h expected (possible gale).',
-        severe: 'Wind above 100 km/h expected (gale).',
+        moderate: 'Wind of {v40} to {v60} {u} expected.',
+        high: 'Wind of {v60} to {v100} {u} expected (possible gale).',
+        severe: 'Wind above {v100} {u} expected (gale).',
       },
       storm: {
         moderate: 'Thunderstorm expected.',
@@ -77,8 +91,8 @@ export default {
       },
       sea: {
         moderate: 'Waves of 2 m or more expected.',
-        high: 'Waves of 2.5 m or more, or wind of 50 km/h or more. Not recommended for small boats.',
-        severe: 'Waves of 3.5 m or more, or wind of 60 km/h or more. Avoid navigation.',
+        high: 'Waves of 2.5 m or more, or wind of {v50} {u} or more. Not recommended for small boats.',
+        severe: 'Waves of 3.5 m or more, or wind of {v60} {u} or more. Avoid navigation.',
       },
     },
     disclaimer: {
@@ -100,7 +114,9 @@ export default {
   },
   wind: {
     title: 'Wind',
-    speed: 'Wind (kt)',
+    speed: 'Wind ({unit})',
+    gust: 'Gust ({unit})',
+    unit: { kn: 'kt', kmh: 'km/h' },
     direction: 'Direction',
     hour: 'Hour',
     level: { calm: 'Calm', moderate: 'Moderate', strong: 'Strong', extreme: 'Extreme' },

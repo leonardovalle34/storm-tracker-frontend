@@ -1,5 +1,6 @@
 import type { DailyForecast, HourlyForecast, MarineHourly } from '@/types/weather'
 import { hasWaveData } from './hourly'
+import { knotsToKmh } from './wind'
 import { describeWeather } from './weatherCode'
 
 export type Severity = 'none' | 'moderate' | 'high' | 'severe'
@@ -14,8 +15,7 @@ export interface DayAlerts {
   alerts: Alert[]
 }
 
-const KMH_PER_KNOT = 1.852
-export const knotsToKmh = (kt: number) => kt * KMH_PER_KNOT
+export { knotsToKmh }
 
 /** Highest first, so the worst matching rule wins. */
 const RANK: Record<Severity, number> = { none: 0, moderate: 1, high: 2, severe: 3 }
@@ -52,13 +52,25 @@ export function classifyHeatSeverity(apparentTemperatureMax?: number | null): Se
   return 'none'
 }
 
-/** km/h: moderate 40-60, high 60-100, severe above 100. */
-export function classifyWindSeverity(windSpeedKmh?: number | null): Severity {
-  if (windSpeedKmh == null) return 'none'
-  if (windSpeedKmh > 100) return 'severe'
-  if (windSpeedKmh >= 60) return 'high'
-  if (windSpeedKmh >= 40) return 'moderate'
+const classifyKmh = (kmh?: number | null): Severity => {
+  if (kmh == null) return 'none'
+  if (kmh > 100) return 'severe'
+  if (kmh >= 60) return 'high'
+  if (kmh >= 40) return 'moderate'
   return 'none'
+}
+
+/**
+ * Wind in knots (sustained and gust), each converted to km/h and classified on its own with the same
+ * thresholds (moderate 40-60, high 60-100, severe above 100); the worst of the two wins, so a gust
+ * over the limit raises the alert even when the sustained wind is below it.
+ */
+export function classifyWindSeverity(
+  windSpeedKnots?: number | null,
+  windGustsKnots?: number | null,
+): Severity {
+  const kmh = (kt?: number | null) => (kt == null ? null : knotsToKmh(kt))
+  return worstSeverity(classifyKmh(kmh(windSpeedKnots)), classifyKmh(kmh(windGustsKnots)))
 }
 
 /** WMO code: 95 thunderstorm is moderate, 96 and 99 (with hail) are severe. */
@@ -92,7 +104,7 @@ const maxOfDay = (times: string[], values: (number | null | undefined)[], date: 
 
 interface BuildInput {
   daily: DailyForecast
-  hourly?: Pick<HourlyForecast, 'time' | 'wind_speed_10m'> | null
+  hourly?: Pick<HourlyForecast, 'time' | 'wind_speed_10m' | 'wind_gusts_10m'> | null
   marine?: MarineHourly | null
 }
 
@@ -101,6 +113,7 @@ export function buildDayAlerts({ daily, hourly, marine }: BuildInput): DayAlerts
   const withSea = hasWaveData(marine)
   return daily.time.map((date, i) => {
     const windKt = hourly ? maxOfDay(hourly.time, hourly.wind_speed_10m, date) : null
+    const gustKt = hourly?.wind_gusts_10m ? maxOfDay(hourly.time, hourly.wind_gusts_10m, date) : null
     const windKmh = windKt === null ? null : knotsToKmh(windKt)
     // The daily precipitation total does not say what fell: on a snow day it is snow, not rain.
     // The daily code is the worst hour of the day, so one thundery hour on a day that never thaws
@@ -114,7 +127,7 @@ export function buildDayAlerts({ daily, hourly, marine }: BuildInput): DayAlerts
         ? ['snow', classifySnowSeverity(daily.precipitation_sum[i])]
         : ['rain', classifyRainSeverity(daily.precipitation_sum[i])],
       ['heat', classifyHeatSeverity(daily.apparent_temperature_max?.[i])],
-      ['wind', classifyWindSeverity(windKmh)],
+      ['wind', classifyWindSeverity(windKt, gustKt)],
       ['storm', snowDay ? 'none' : classifyStormSeverity(code)],
     ]
     if (withSea) {

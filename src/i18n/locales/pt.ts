@@ -24,6 +24,8 @@ export default {
     themeToggle: 'Alternar tema claro/escuro',
     temperatureUnit: 'Unidade de temperatura',
     temperatureUnitTip: 'Alterna a temperatura entre Celsius e Fahrenheit.',
+    windUnit: 'Unidade de vento',
+    windUnitTip: 'Alterna a velocidade do vento entre nós e km/h.',
   },
   footer: { madeBy: 'Feito por', company: 'Nexus Tecnologia' },
   scrollSync: {
@@ -43,7 +45,19 @@ export default {
     label: 'Mapa de satélite',
     hint: 'Clique no mapa para selecionar um local.',
   },
-  forecast: { title: 'Previsão de 16 dias', precipitation: 'Precipitação', max: 'Máx', min: 'Mín' },
+  forecast: {
+    title: 'Previsão de 16 dias',
+    precipitation: 'Precipitação',
+    max: 'Máx',
+    min: 'Mín',
+    tempChart: 'Curva de temperatura por hora',
+    day: {
+      prev: 'Dia anterior',
+      next: 'Próximo dia',
+      close: 'Fechar',
+      noHourly: 'Sem dados horários de temperatura para este dia.',
+    },
+  },
   alerts: {
     banner: 'Atenção nos próximos {days} dias',
     bannerNote: 'Estimativa de modelo de previsão, não é um alerta oficial.',
@@ -66,9 +80,9 @@ export default {
         severe: 'Chuva muito forte prevista (100 mm ou mais no dia).',
       },
       wind: {
-        moderate: 'Vento de 40 a 60 km/h previsto.',
-        high: 'Vento de 60 a 100 km/h previsto (possível vendaval).',
-        severe: 'Vento acima de 100 km/h previsto (vendaval).',
+        moderate: 'Vento de {v40} a {v60} {u} previsto.',
+        high: 'Vento de {v60} a {v100} {u} previsto (possível vendaval).',
+        severe: 'Vento acima de {v100} {u} previsto (vendaval).',
       },
       storm: {
         moderate: 'Trovoada prevista.',
@@ -77,8 +91,8 @@ export default {
       },
       sea: {
         moderate: 'Ondas de 2 m ou mais previstas.',
-        high: 'Ondas de 2,5 m ou mais, ou vento de 50 km/h ou mais. Não recomendado para embarcações pequenas.',
-        severe: 'Ondas de 3,5 m ou mais, ou vento de 60 km/h ou mais. Evitar navegação.',
+        high: 'Ondas de 2,5 m ou mais, ou vento de {v50} {u} ou mais. Não recomendado para embarcações pequenas.',
+        severe: 'Ondas de 3,5 m ou mais, ou vento de {v60} {u} ou mais. Evitar navegação.',
       },
     },
     disclaimer: {
@@ -100,7 +114,9 @@ export default {
   },
   wind: {
     title: 'Vento',
-    speed: 'Vento (nós)',
+    speed: 'Vento ({unit})',
+    gust: 'Rajada ({unit})',
+    unit: { kn: 'nós', kmh: 'km/h' },
     direction: 'Direção',
     hour: 'Hora',
     level: { calm: 'Calmo', moderate: 'Moderado', strong: 'Forte', extreme: 'Extremo' },

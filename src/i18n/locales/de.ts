@@ -24,6 +24,8 @@ export default {
     themeToggle: 'Zwischen hellem und dunklem Design wechseln',
     temperatureUnit: 'Temperatureinheit',
     temperatureUnitTip: 'Wechselt die Temperaturen zwischen Celsius und Fahrenheit.',
+    windUnit: 'Windeinheit',
+    windUnitTip: 'Schaltet die Windgeschwindigkeit zwischen Knoten und km/h um.',
   },
   footer: { madeBy: 'Entwickelt von', company: 'Nexus Tecnologia' },
   scrollSync: {
@@ -43,7 +45,19 @@ export default {
     label: 'Satellitenkarte',
     hint: 'Klicke auf die Karte, um einen Ort auszuwählen.',
   },
-  forecast: { title: '16-Tage-Vorhersage', precipitation: 'Niederschlag', max: 'Max', min: 'Min' },
+  forecast: {
+    title: '16-Tage-Vorhersage',
+    precipitation: 'Niederschlag',
+    max: 'Max',
+    min: 'Min',
+    tempChart: 'Stündliche Temperaturkurve',
+    day: {
+      prev: 'Vorheriger Tag',
+      next: 'Nächster Tag',
+      close: 'Schließen',
+      noHourly: 'Keine stündlichen Temperaturdaten für diesen Tag.',
+    },
+  },
   alerts: {
     banner: 'Achtung in den nächsten {days} Tagen',
     bannerNote: 'Schätzung eines Vorhersagemodells, keine amtliche Warnung.',
@@ -66,9 +80,9 @@ export default {
         severe: 'Sehr starker Regen erwartet (100 mm oder mehr am Tag).',
       },
       wind: {
-        moderate: 'Wind mit 40 bis 60 km/h erwartet.',
-        high: 'Wind mit 60 bis 100 km/h erwartet (möglicher Sturm).',
-        severe: 'Wind mit über 100 km/h erwartet (Orkan).',
+        moderate: 'Wind mit {v40} bis {v60} {u} erwartet.',
+        high: 'Wind mit {v60} bis {v100} {u} erwartet (möglicher Sturm).',
+        severe: 'Wind mit über {v100} {u} erwartet (Orkan).',
       },
       storm: {
         moderate: 'Gewitter erwartet.',
@@ -77,8 +91,8 @@ export default {
       },
       sea: {
         moderate: 'Wellen von 2 m oder mehr erwartet.',
-        high: 'Wellen von 2,5 m oder mehr oder Wind ab 50 km/h. Für kleine Boote nicht empfohlen.',
-        severe: 'Wellen von 3,5 m oder mehr oder Wind ab 60 km/h. Schifffahrt vermeiden.',
+        high: 'Wellen von 2,5 m oder mehr oder Wind ab {v50} {u}. Für kleine Boote nicht empfohlen.',
+        severe: 'Wellen von 3,5 m oder mehr oder Wind ab {v60} {u}. Schifffahrt vermeiden.',
       },
     },
     disclaimer: {
@@ -100,7 +114,9 @@ export default {
   },
   wind: {
     title: 'Wind',
-    speed: 'Wind (kt)',
+    speed: 'Wind ({unit})',
+    gust: 'Böen ({unit})',
+    unit: { kn: 'kt', kmh: 'km/h' },
     direction: 'Richtung',
     hour: 'Uhrzeit',
     level: { calm: 'Ruhig', moderate: 'Mäßig', strong: 'Stark', extreme: 'Extrem' },

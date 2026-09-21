@@ -21,6 +21,7 @@
   --accent: #0e7490;
   --accent-fg: #ffffff;
   --ocean: #0f766e;
+  --warm: #ea580c;
 
   --wind-calm-bg: #bbf7d0;
   --wind-calm-fg: #14532d;
@@ -43,6 +44,7 @@
   --accent: #22d3ee;
   --accent-fg: #06202a;
   --ocean: #2dd4bf;
+  --warm: #fb923c;
 
   --wind-calm-bg: #14532d;
   --wind-calm-fg: #dcfce7;
@@ -67,6 +69,7 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-ocean: var(--ocean);
+  --color-warm: var(--warm);
   --color-wind-calm: var(--wind-calm-bg);
   --color-wind-calm-fg: var(--wind-calm-fg);
   --color-wind-moderate: var(--wind-moderate-bg);

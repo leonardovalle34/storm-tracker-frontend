@@ -80,22 +80,43 @@ describe('classifyHeatSeverity (daily max apparent temperature, °C)', () => {
   })
 })
 
-describe('classifyWindSeverity (km/h)', () => {
+describe('classifyWindSeverity (knots, sustained + gust)', () => {
   it.each([
     [0, 'none'],
-    [39.9, 'none'],
-    [40, 'moderate'], // lower bound is inclusive
-    [59.9, 'moderate'],
-    [60, 'high'],
-    [100, 'high'], // 100 is still high: severe is strictly above
-    [100.1, 'severe'],
-    [150, 'severe'],
-  ] as const)('%s km/h -> %s', (kmh, expected) => {
-    expect(classifyWindSeverity(kmh)).toBe(expected)
+    [21.5, 'none'], // 39.8 km/h
+    [21.6, 'moderate'], // 40.0 km/h: lower bound is inclusive
+    [32.3, 'moderate'], // 59.8 km/h
+    [32.4, 'high'], // 60.0 km/h
+    [53.9, 'high'], // 99.8 km/h
+    [54, 'severe'], // 100.008 km/h: severe is strictly above 100
+    [80, 'severe'],
+  ] as const)('sustained %s kt alone -> %s', (kt, expected) => {
+    expect(classifyWindSeverity(kt)).toBe(expected)
+    expect(classifyWindSeverity(kt, null)).toBe(expected)
   })
 
-  it('treats a missing value as none', () => {
+  it('applies the same thresholds to the gust alone', () => {
+    expect(classifyWindSeverity(null, 21.5)).toBe('none')
+    expect(classifyWindSeverity(null, 21.6)).toBe('moderate')
+    expect(classifyWindSeverity(null, 32.4)).toBe('high')
+    expect(classifyWindSeverity(null, 54)).toBe('severe')
+  })
+
+  it('a gust over the limit wins over a calm sustained wind (14 kt sustained / 28 kt gust -> moderate)', () => {
+    expect(classifyWindSeverity(14, 28)).toBe('moderate') // 25.9 km/h sustained -> none; 51.9 km/h gust -> moderate
+    expect(classifyWindSeverity(14, 40)).toBe('high') // 74 km/h gust
+    expect(classifyWindSeverity(14, 60)).toBe('severe') // 111 km/h gust
+  })
+
+  it('the sustained wind still wins when it is the higher of the two', () => {
+    expect(classifyWindSeverity(40, 28)).toBe('high')
+    expect(classifyWindSeverity(60, 28)).toBe('severe')
+  })
+
+  it('treats missing values as none', () => {
     expect(classifyWindSeverity(null)).toBe('none')
+    expect(classifyWindSeverity(null, null)).toBe('none')
+    expect(classifyWindSeverity()).toBe('none')
   })
 })
 
@@ -252,6 +273,14 @@ describe('buildDayAlerts', () => {
     const r = buildDayAlerts({ daily: daily(), hourly: h })
     expect(r[0].alerts).toEqual([{ category: 'wind', severity: 'moderate' }])
     expect(r[1].alerts).toEqual([{ category: 'wind', severity: 'severe' }])
+  })
+
+  it("raises the wind alert from the day's strongest gust when the sustained wind is low", () => {
+    const h = { ...hourly([5, 5]), wind_gusts_10m: Array(48).fill(8) as (number | null)[] }
+    h.wind_gusts_10m[10] = 28 // 51.9 km/h gust over 5 kt (9.3 km/h) sustained on day 1
+    const r = buildDayAlerts({ daily: daily(), hourly: h })
+    expect(r[0].alerts).toEqual([{ category: 'wind', severity: 'moderate' }])
+    expect(r[1].alerts).toEqual([])
   })
 
   it('adds sea only when there is ocean data, using the day max wave and wind', () => {

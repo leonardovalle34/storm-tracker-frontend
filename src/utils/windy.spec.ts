@@ -29,3 +29,12 @@ describe('windyUrl', () => {
     expect(Number(big.searchParams.get('zoom'))).toBeGreaterThan(Number(small.searchParams.get('zoom')))
   })
 })
+
+describe('windyUrl wind unit', () => {
+  const loc = { latitude: 1, longitude: 2 }
+  it('asks Windy for knots by default and km/h when chosen', () => {
+    expect(new URL(windyUrl(loc, 'wind')).searchParams.get('metricWind')).toBe('kt')
+    expect(new URL(windyUrl(loc, 'wind', false, 'C', 'kn')).searchParams.get('metricWind')).toBe('kt')
+    expect(new URL(windyUrl(loc, 'wind', false, 'C', 'km/h')).searchParams.get('metricWind')).toBe('km/h')
+  })
+})
