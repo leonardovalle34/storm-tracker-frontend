@@ -121,6 +121,10 @@ export default {
     hour: 'Hour',
     level: { calm: 'Calm', moderate: 'Moderate', strong: 'Strong', extreme: 'Extreme' },
   },
+  sun: {
+    sunrise: 'Sunrise',
+    sunset: 'Sunset',
+  },
   moon: {
     invalidDate: 'Invalid date for the moon phase.',
     'New Moon': 'New Moon',

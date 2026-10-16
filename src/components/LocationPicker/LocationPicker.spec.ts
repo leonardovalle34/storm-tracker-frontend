@@ -242,6 +242,26 @@ describe('LocationPicker', () => {
       expect(w.find('[data-testid="current-wind"]').exists()).toBe(false)
     })
 
+    it("shows today's sunrise and sunset (first day of daily)", async () => {
+      const w = await pick({ temperature_2m: 20, weather_code: 0, wind_speed_10m: 5 })
+      const row = w.get('[data-testid="current-weather"]')
+      expect(row.get('[data-testid="sunrise"]').text()).toBe('05:50')
+      expect(row.get('[data-testid="sunset"]').text()).toBe('18:00')
+      expect(row.get('[data-testid="sunset"] svg').attributes('aria-label')).toBe('Pôr do sol')
+    })
+
+    it('omits the sun times when the forecast has no sunrise/sunset', async () => {
+      const w = mk()
+      const f = makeForecast()
+      delete f.daily.sunrise
+      delete f.daily.sunset
+      useWeatherStore().forecast = { ...f, current: { temperature_2m: 20 } } as never
+      useLocationStore().select({ name: 'Santos', latitude: -23.9, longitude: -46.3 })
+      await nextTick()
+      expect(w.find('[data-testid="current-temp"]').exists()).toBe(true)
+      expect(w.find('[data-testid="sun-times"]').exists()).toBe(false)
+    })
+
     it('shows nothing before a place is selected', () => {
       useWeatherStore().forecast = { ...makeForecast(), current: { temperature_2m: 20 } } as never
       expect(mk().find('[data-testid="current-weather"]').exists()).toBe(false)

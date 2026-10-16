@@ -143,19 +143,27 @@ The page (`App.vue`) is, top to bottom: header → location picker (map) → sta
 - **Expanded** (until a place exists): title, satellite map, minimize button, hint "Click the map to select a location", and the **current-conditions row** inside the same bordered box as the map.
 - **Collapsed** (after any selection: search, click or geolocation): a compact strip in one bordered box, top row = pin, place name, **favorite star**, "Change location"; bottom row = current conditions. The collapse/expand is a height animation (`grid-template-rows` 0fr↔1fr); the map is re-measured after it.
 - **Map click** selects coordinates; the name is then `"lat, lon"` with 4 decimals (see [limitations](#known-limitations)). Clicks keep the user's zoom; a search pick recenters at zoom 9.
-- **Current conditions ("NOW")**: label, weather icon (from `weather_code`, tooltip with the description), temperature in the chosen unit, wind in knots. Shown only if a place is selected **and** `forecast.current` has at least one value; individual missing values are omitted.
+- **Current conditions ("NOW")**: label, weather icon (from `weather_code`, tooltip with the description), temperature in the chosen unit, wind in knots, and **today's sunrise / sunset** (`daily.sunrise[0]` / `daily.sunset[0]`, see [Sunrise and sunset](#sunrise-and-sunset)). Shown only if a place is selected **and** `forecast.current` has at least one value; individual missing values are omitted.
 - **Geolocation on first visit:** the browser is asked **once** (flag `st-geo-asked`). Later visits only reuse a permission already granted. It never overrides a place the user picked meanwhile and never throws or shows an error if denied.
 - **History:** every `select` / `selectCoords` (search, map click, geolocation) is recorded (max 10, most recent first, deduplicated by coordinates).
 
 ### 16-day forecast (`ForecastCards`)
 
-- One card per day in a horizontally scrolling row: weekday + date, weather icon (from the daily `weather_code`), max/min temperature (chosen unit), precipitation, **UV badge** (fixed-size chip with the index, colored by WHO level; the level name is in the tooltip) and the **alert row**.
+- One card per day in a horizontally scrolling row: weekday + date, weather icon (from the daily `weather_code`), max/min temperature (chosen unit), precipitation, **sunrise / sunset** of that day, **UV badge** (fixed-size chip with the index, colored by WHO level; the level name is in the tooltip) and the **alert row**.
 - The **last requested day** usually comes back with null data (the model reaches ~15 days); trailing days without data are dropped instead of rendered as zeros. Gaps in the middle are kept.
 - The **alert row** appears only on days that have at least one active alert; quiet days show nothing. Icons are colored yellow / orange / red and each has a tooltip (see [alerts](#alerts)). The **sea** alert appears only when the location has ocean data.
 - The **banner** above the cards appears when any category is **high or severe within the first 3 days**. It lists each category once, at its worst level, with the dates on which it is high or severe, plus a "model estimate, not an official alert" note. Its color is orange (worst = high) or red (worst = severe).
 - **Day detail modal** (`DayDetailModal`, native `<dialog>` like the map modal; closes with the button, backdrop click or Esc). Every card is a `<button>` that opens it on that day. Header: place name, date, the day's weather icon and, on the **first day (today)**, the current temperature (`forecast.current`, if sent) with max/min underneath; other days show max/min. The **◀ ▶** arrows (and ArrowLeft/ArrowRight) move to the previous/next day without closing; they are disabled on the first/last day. The content is only rendered while open.
 - **Hourly temperature chart** (`HourlyTempChart`, data from `buildDayHours` in `utils/dayHours.ts`): **all 24 hours** of the day (not the 3-hour columns). Same technique as the tide chart (`smoothPath`, Catmull-Rom → Bézier, gradient fill, unique gradient id) in the **warm** token (`--warm`, orange/amber) instead of ocean teal. Rows: a small weather icon above each hour (the hour's `weather_code` when the backend sends it, otherwise the day's icon repeated), the curve with a dot per hour, **the temperature of every hour** below the curve (unlike the tide chart, which only labels extrema) and the hour axis `00h`–`23h`. Values follow the temperature unit (°C/°F; the chart scale is unit-independent). A missing hour shows a dash and no dot; with fewer than 2 valid hours the modal says there is no hourly data. The chart scrolls horizontally on narrow screens. On today the axis is still 00h–23h (the backend gives no local "now" hour, so a from-now axis is not implemented).
 - A **scroll-sync toggle** in this header links the three horizontal scrollers (see [Scroll sync](#scroll-sync)).
+
+#### Sunrise and sunset
+
+- Component `SunTimes` (`components/SunTimes/`), used by the current-conditions row and by every forecast card. It only receives the two strings as props; the data comes from the `weather` store (`forecast.daily.sunrise` / `sunset`).
+- The backend sends `"YYYY-MM-DDTHH:MM"` already in the **point's local time** (`timezone=auto`). `formatClockTime` (`utils/clock.ts`) cuts `HH:MM` straight from the string (`.slice(11, 16)`); **no `Date` and no timezone conversion**, so the time shown is the local time at the place, not the browser's.
+- A missing or malformed value drops just that half; if both are missing the block is not rendered at all (no "Invalid Date" or `--:--`).
+- Icons are inline SVG (sun on the horizon with an up / down arrow) in `currentColor` (muted text, AA in both themes, also on the cards' `surface-2` hover), with a translated `aria-label` (`sun.sunrise` / `sun.sunset`).
+- "Today" is `daily[0]`, the same convention as the day detail modal.
 
 ### Wind grid (`WindGrid`)
 
@@ -303,7 +311,7 @@ Notes: places are considered the same when their coordinates match to 4 decimals
 
 **Accessibility.**
 
-- **Contrast:** theme token pairs are tested against WCAG AA 4.5:1 in **both themes** (`src/theme.spec.ts`): base text and muted text on `bg`/`surface`, all four wind-level pairs, the ocean accent, and a stronger border for day dividers. Alert colors reuse the wind pairs, so they inherit that check. Contrast of every ad-hoc combination in components (for example the header's placeholder text or the footer's 85%-opacity text) is **not** tested.
+- **Contrast:** theme token pairs are tested against WCAG AA 4.5:1 in **both themes** (`src/theme.spec.ts`): base text and muted text on `bg`/`surface` (muted also on `surface-2`, the card hover), all four wind-level pairs, the ocean accent, and a stronger border for day dividers. Alert colors reuse the wind pairs, so they inherit that check. Contrast of every ad-hoc combination in components (for example the header's placeholder text or the footer's 85%-opacity text) is **not** tested.
 - **Semantics:** the search is a `combobox` with `listbox`/`option`; toggles are `role="switch"` or `aria-pressed` buttons; icons carry `aria-label`s; tooltips are linked with `aria-describedby`; the modal is a native `<dialog>`; the map and the collapsed/expanded regions use `inert` so hidden content is not focusable.
 - **Not color-only:** wind cells show their number, alerts show an icon plus text in the tooltip/banner, the theme switch shows the theme name.
 - **Motion:** transitions use `motion-reduce:transition-none` where present.

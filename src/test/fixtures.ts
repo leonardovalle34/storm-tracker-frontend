@@ -12,6 +12,9 @@ export function makeForecast(days = ['2026-09-19', '2026-09-20']): ForecastRespo
       temperature_2m_min: days.map((_, i) => 20.6 + i),
       precipitation_sum: days.map((_, i) => 1.5 * i),
       weather_code: days.map(() => 63),
+      // local time of the point; keeps daylightHours at its 6h-17h default
+      sunrise: days.map((d, i) => `${d}T05:${50 + (i % 10)}`),
+      sunset: days.map((d, i) => `${d}T18:${String(i % 60).padStart(2, '0')}`),
     },
     hourly: {
       time,
