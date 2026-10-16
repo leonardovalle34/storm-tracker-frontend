@@ -2,13 +2,16 @@ import { defineStore } from 'pinia'
 import * as geocodeService from '@/services/geocodeService'
 import type { Location } from '@/types/weather'
 import { errorMessage } from '@/utils/errors'
+import * as ipLocationService from '@/services/ipLocationService'
 import {
   alreadyAsked,
+  answered,
   geolocationSupported,
   getPosition,
   markAsked,
   permissionGranted,
 } from '@/utils/geolocation'
+import { useFavoritesStore } from './favorites'
 import { useHistoryStore } from './history'
 
 export const useLocationStore = defineStore('location', {
@@ -64,22 +67,38 @@ export const useLocationStore = defineStore('location', {
     },
 
     /**
-     * First visit: ask the browser once and, if allowed, select the user's position. Later visits only
-     * reuse a permission the browser already granted, so there is never a repeated prompt. Never
-     * overrides a place the user picked in the meantime and never throws.
+     * Picks a starting place without any typing: the browser position first; when that is denied or
+     * unavailable, the user's most recent favorite; failing that, an approximate position from the IP.
+     * The browser is asked once (later visits only reuse a permission already granted, so there is never
+     * a repeated prompt) and only a real answer counts as "asked": a timeout or "unavailable" (common on
+     * desktops without GPS) is retried next visit. Never overrides a place the user picked in the
+     * meantime and never throws.
      */
     async detectLocation() {
-      if (!geolocationSupported()) return
-      if (alreadyAsked() && !(await permissionGranted())) return
-      markAsked()
-      const coords = await getPosition()
-      if (!coords) return
-      this.detected = {
-        name: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+      const coords = await this.browserPosition()
+      if (coords) {
+        this.detected = {
+          name: `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        }
+        if (!this.location) this.select(this.detected)
+        return
       }
-      if (!this.location) this.select(this.detected)
+      if (this.location) return
+      const favorite = useFavoritesStore().list[0]
+      if (favorite) return this.select(favorite)
+      const byIp = await ipLocationService.locate()
+      if (byIp && !this.location) this.select(byIp)
+    },
+
+    async browserPosition(): Promise<GeolocationCoordinates | null> {
+      if (!geolocationSupported()) return null
+      if (alreadyAsked() && !(await permissionGranted())) return null
+      const result = await getPosition()
+      if (answered(result)) markAsked()
+      else if (result.coords === null) console.warn(`Geolocation unavailable (code ${result.code})`)
+      return result.coords
     },
   },
 })
