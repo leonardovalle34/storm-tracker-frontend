@@ -2,6 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SunTimes from '@/components/SunTimes/SunTimes.vue'
 import { useLocationStore } from '@/stores/location'
 import { useUnitsStore } from '@/stores/units'
 import { useWeatherStore } from '@/stores/weather'
@@ -22,6 +23,12 @@ const current = computed(() => {
   const wind = c.wind_speed_10m ?? null
   if (temp === null && wind === null && c.weather_code == null) return null
   return { temp, wind, ...describeWeather(c.weather_code) }
+})
+
+// daily[0] is today (same convention as the day detail modal)
+const sun = computed(() => {
+  const d = forecast.value?.daily
+  return { sunrise: d?.sunrise?.[0], sunset: d?.sunset?.[0] }
 })
 </script>
 
@@ -44,5 +51,6 @@ const current = computed(() => {
     <span v-if="current.wind !== null" data-testid="current-wind"
       >💨 {{ formatWind(current.wind, windUnit) }}</span
     >
+    <SunTimes :sunrise="sun.sunrise" :sunset="sun.sunset" />
   </span>
 </template>

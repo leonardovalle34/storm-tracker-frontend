@@ -25,6 +25,8 @@ describe('theme tokens', () => {
     expect(contrast(t.text, t.bg)).toBeGreaterThanOrEqual(4.5)
     expect(contrast(t.muted, t.surface)).toBeGreaterThanOrEqual(4.5)
     expect(contrast(t.muted, t.bg)).toBeGreaterThanOrEqual(4.5)
+    // forecast cards turn surface-2 on hover, and their muted lines (rain, sunrise/sunset) must stay readable
+    expect(contrast(t.muted, t['surface-2'])).toBeGreaterThanOrEqual(4.5)
   })
 
   it.each(levels)('wind level %s meets AA in light and dark', (lvl) => {

@@ -121,6 +121,10 @@ export default {
     hour: 'Uhrzeit',
     level: { calm: 'Ruhig', moderate: 'Mäßig', strong: 'Stark', extreme: 'Extrem' },
   },
+  sun: {
+    sunrise: 'Sonnenaufgang',
+    sunset: 'Sonnenuntergang',
+  },
   moon: {
     invalidDate: 'Ungültiges Datum für die Mondphase.',
     'New Moon': 'Neumond',

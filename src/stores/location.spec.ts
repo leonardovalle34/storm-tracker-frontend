@@ -1,9 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as geocodeService from '@/services/geocodeService'
+import * as ipLocationService from '@/services/ipLocationService'
 import type { Location } from '@/types/weather'
+import { useFavoritesStore } from './favorites'
 import { useLocationStore } from './location'
 
 vi.mock('@/services/geocodeService')
+vi.mock('@/services/ipLocationService')
 const search = vi.mocked(geocodeService.search)
 
 describe('location store', () => {
@@ -101,8 +104,13 @@ describe('location store', () => {
       getCurrentPosition.mockImplementation((ok: Ok) => ok({ coords: { latitude: -23.5, longitude: -46.6 } }))
     const deny = () => getCurrentPosition.mockImplementation((_ok: Ok, fail: Fail) => fail({ code: 1 }))
 
+    const fail = (code: number) =>
+      getCurrentPosition.mockImplementation((_ok: Ok, f: Fail) => f({ code }))
+
     beforeEach(() => {
       getCurrentPosition.mockReset()
+      vi.mocked(ipLocationService.locate).mockReset().mockResolvedValue(null)
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
       stubGeo()
     })
 
@@ -171,6 +179,84 @@ describe('location store', () => {
       await pending
       expect(s.location?.name).toBe('Manual')
       expect(s.detected).toMatchObject({ latitude: -23.5 })
+    })
+
+    it('retries on the next visit when the browser could not answer (unavailable / timeout)', async () => {
+      fail(2)
+      const s = useLocationStore()
+      await s.detectLocation()
+      stubGeo(true, 'granted')
+      grant()
+      await s.detectLocation()
+      expect(getCurrentPosition).toHaveBeenCalledTimes(2)
+      expect(s.location).toMatchObject({ latitude: -23.5 })
+    })
+
+    it('falls back to the favorite when the browser never answers at all', async () => {
+      vi.useFakeTimers()
+      try {
+        getCurrentPosition.mockImplementation(() => {}) // hangs: prompt ignored / no provider
+        useFavoritesStore().add({ name: 'Pico', latitude: -23.9, longitude: -46.3 })
+        const s = useLocationStore()
+        const pending = s.detectLocation()
+        await vi.advanceTimersByTimeAsync(20_000)
+        await pending
+        expect(s.location?.name).toBe('Pico')
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    describe('fallbacks when the browser gives no position', () => {
+      const fav: Location = { name: 'Pico', latitude: -23.9, longitude: -46.3 }
+      const byIp: Location = { name: 'Santos, Brazil', latitude: -23.96, longitude: -46.33 }
+
+      it('selects the most recent favorite', async () => {
+        fail(1)
+        useFavoritesStore().add({ name: 'Old', latitude: 1, longitude: 1 })
+        useFavoritesStore().add(fav)
+        const s = useLocationStore()
+        await s.detectLocation()
+        expect(s.location).toEqual(fav)
+        expect(s.detected).toBeNull()
+        expect(ipLocationService.locate).not.toHaveBeenCalled()
+      })
+
+      it('uses the favorite when the browser has no geolocation at all', async () => {
+        stubGeo(false)
+        useFavoritesStore().add(fav)
+        const s = useLocationStore()
+        await s.detectLocation()
+        expect(s.location).toEqual(fav)
+      })
+
+      it('falls back to the IP position when there is no favorite', async () => {
+        fail(2)
+        vi.mocked(ipLocationService.locate).mockResolvedValue(byIp)
+        const s = useLocationStore()
+        await s.detectLocation()
+        expect(s.location).toEqual(byIp)
+      })
+
+      it('stays empty when every fallback fails', async () => {
+        fail(1)
+        const s = useLocationStore()
+        await s.detectLocation()
+        expect(s.location).toBeNull()
+      })
+
+      it('does not override a place picked while the IP lookup was running', async () => {
+        fail(1)
+        let resolveIp!: (l: Location) => void
+        vi.mocked(ipLocationService.locate).mockReturnValue(new Promise((r) => (resolveIp = r)))
+        const s = useLocationStore()
+        const pending = s.detectLocation()
+        await vi.waitFor(() => expect(ipLocationService.locate).toHaveBeenCalled())
+        s.select({ name: 'Manual', latitude: 1, longitude: 2 })
+        resolveIp(byIp)
+        await pending
+        expect(s.location?.name).toBe('Manual')
+      })
     })
   })
 })

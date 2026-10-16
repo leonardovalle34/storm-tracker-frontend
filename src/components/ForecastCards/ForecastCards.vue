@@ -14,6 +14,7 @@ import { formatDay } from '@/utils/date'
 import { describeWeather } from '@/utils/weatherCode'
 import ConditionBadge from '@/components/ConditionBadge/ConditionBadge.vue'
 import DayDetailModal from '@/components/DayDetailModal/DayDetailModal.vue'
+import SunTimes from '@/components/SunTimes/SunTimes.vue'
 
 const props = defineProps<{
   daily: DailyForecast
@@ -56,6 +57,8 @@ const cards = computed(() =>
     rain: props.daily.precipitation_sum[i] ?? 0,
     weather: describeWeather(props.daily.weather_code?.[i]),
     uv: props.daily.uv_index_max?.[i] ?? null,
+    sunrise: props.daily.sunrise?.[i],
+    sunset: props.daily.sunset?.[i],
   })),
 )
 </script>
@@ -110,6 +113,7 @@ const cards = computed(() =>
           {{ c.max }} <span class="font-normal text-muted">{{ c.min }}</span>
         </span>
         <span class="block text-xs text-muted" :title="t('forecast.precipitation')">💧 {{ c.rain }} mm</span>
+        <SunTimes :sunrise="c.sunrise" :sunset="c.sunset" />
         <span v-if="c.uv !== null" data-testid="uv" class="mt-0.5 block"
           ><ConditionBadge kind="uv" :value="c.uv"
         /></span>

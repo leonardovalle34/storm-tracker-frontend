@@ -7,6 +7,7 @@ import { makeForecast, makeMarine } from '@/test/fixtures'
 import App from './App.vue'
 
 vi.mock('@/services/weatherService')
+vi.mock('@/services/ipLocationService', () => ({ locate: vi.fn().mockResolvedValue(null) }))
 
 const mk = () =>
   mount(App, {

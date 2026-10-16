@@ -85,6 +85,20 @@ describe('ForecastCards', () => {
     expect(w.find('[data-testid="uv"]').exists()).toBe(false)
   })
 
+  it('shows sunrise and sunset of each day on its card', () => {
+    const cards = w.findAll('[data-testid="day-card"]')
+    expect(cards.map((c) => c.get('[data-testid="sunrise"]').text())).toEqual(['05:50', '05:51', '05:52'])
+    expect(cards.map((c) => c.get('[data-testid="sunset"]').text())).toEqual(['18:00', '18:01', '18:02'])
+    expect(cards[0].get('[data-testid="sunrise"] svg').attributes('aria-label')).toBe('Nascer do sol')
+  })
+
+  it('omits the sun times when the API does not send them', () => {
+    const { sunrise: _r, sunset: _s, ...rest } = daily
+    const m = mount(ForecastCards, { props: { daily: rest }, global: { plugins: [i18n] } })
+    expect(m.find('[data-testid="sun-times"]').exists()).toBe(false)
+    expect(m.text()).not.toContain('Invalid')
+  })
+
   it('has the scroll sync toggle in its header', () => {
     expect(w.find('button[role="switch"]').exists()).toBe(true)
   })
