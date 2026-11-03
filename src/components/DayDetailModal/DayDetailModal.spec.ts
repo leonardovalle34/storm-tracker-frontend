@@ -74,14 +74,87 @@ describe('DayDetailModal', () => {
     expect(w.get('[data-testid="day-temps"]').text()).toContain('89°') // 31.4 C
   })
 
-  it('uses the hourly weather_code when present, else the daily one on every hour', () => {
-    const plain = mk(1)
-    expect(new Set(plain.findAll('[data-testid="temp-icon"]').map((i) => i.text()))).toEqual(new Set(['🌧️']))
-    const time = makeForecast(days).hourly.time
-    const withCodes = mk(1, { weather_code: time.map(() => 0) })
-    expect(new Set(withCodes.findAll('[data-testid="temp-icon"]').map((i) => i.text()))).toEqual(
-      new Set(['☀️']),
-    )
+  describe('hourly icons', () => {
+    // daily = 95 (the day's worst event); each hour has its own code, night before 6h and from 18h
+    const HOURLY: Record<number, number> = { 0: 0, 3: 2, 6: 0, 9: 2, 12: 3, 14: 95, 16: 81, 19: 80, 21: 61 }
+    const mkStormDay = () => {
+      const f = makeForecast(days)
+      const hour = (i: number) => i % 24
+      return mount(DayDetailModal, {
+        props: {
+          daily: { ...f.daily, weather_code: days.map(() => 95), precipitation_sum: days.map(() => 2) },
+          hourly: {
+            ...f.hourly,
+            weather_code: f.hourly.time.map((_, i) => HOURLY[hour(i)] ?? 0),
+            is_day: f.hourly.time.map((_, i) => (hour(i) >= 6 && hour(i) < 18 ? 1 : 0)),
+            precipitation: f.hourly.time.map((_, i) => (i === 24 + 14 ? 2 : 0)),
+          },
+          index: 1,
+        },
+        global: { plugins: [i18n] },
+      })
+    }
+
+    it('each hour shows its own code, not the daily 95', () => {
+      const w = mkStormDay()
+      const icons = w.findAll('[data-testid="temp-icon"]')
+      expect(icons).toHaveLength(24)
+      const at = (h: number) => icons[h].text()
+      expect(at(6)).toBe('☀️')
+      expect(at(9)).toBe('⛅')
+      expect(at(12)).toBe('☁️')
+      expect(at(14)).toBe('⛈️') // the only stormy hour
+      expect(at(16)).toBe('🌦️')
+      expect(icons.filter((i) => i.text() === '⛈️')).toHaveLength(1)
+      expect(icons[12].attributes('aria-label')).toBe('Nublado')
+      expect(icons[14].attributes('aria-label')).toBe('Tempestade')
+    })
+
+    it('night hours (is_day = 0) show the moon / sunless variants', () => {
+      const icons = mkStormDay().findAll('[data-testid="temp-icon"]')
+      expect(icons[0].text()).toBe('🌙') // clear
+      expect(icons[3].text()).toBe('☁️') // partly cloudy
+      expect(icons[19].text()).toBe('🌧️') // showers
+      expect(icons[21].text()).toBe('🌧️') // rain has no sun anyway
+      expect(icons[0].attributes('aria-label')).toBe(icons[6].attributes('aria-label')) // same condition
+    })
+
+    it('the header shows the average daytime condition, not the daily 95', () => {
+      // daylight 6h-17h: 8 clear (0), partly cloudy 9h (1), overcast 12h (2), thunder 14h (5, 2 mm),
+      // showers 16h (4, 0 mm) => average 12 / 12 = 1 => partly cloudy, + isolated thunder
+      const w = mkStormDay()
+      const header = w.get('[data-testid="day-weather"]')
+      expect(header.text()).toBe('⛅⚡')
+      expect(header.attributes('aria-label')).toBe('Parcialmente nublado')
+      expect(header.attributes('tabindex')).toBe('0') // keyboard reaches the tooltip
+      const tip = w.get(`#${header.attributes('aria-describedby')}`)
+      expect(tip.attributes('role')).toBe('tooltip')
+      expect(tip.text()).toContain('Parcialmente nublado · trovoadas isoladas (1 h, 2 mm, por volta das 14h)')
+      expect(tip.text()).toContain('Ícone pela média das condições durante o dia (sem o período noturno)')
+    })
+
+    it('each hour icon has a tooltip with the WMO name and the hour precipitation', async () => {
+      const w = mkStormDay()
+      const icons = w.findAll('[data-testid="temp-icon"]')
+      const describedBy = (h: number) => w.get(`#${icons[h].attributes('aria-describedby')}`).text()
+      expect(describedBy(14)).toBe('Trovoada · 2 mm')
+      expect(describedBy(16)).toBe('Pancadas de chuva moderadas') // code 81, 0 mm
+      expect(describedBy(6)).toBe('Céu limpo')
+      // the visible bubble follows hover / focus
+      await icons[14].trigger('mouseenter')
+      expect(w.get('[data-testid="hour-tip"]').text()).toBe('Trovoada · 2 mm')
+      expect(w.get('[data-testid="hour-tip"]').attributes('data-open')).toBe('true')
+      await icons[14].trigger('mouseleave')
+      await icons[6].trigger('focus')
+      expect(w.get('[data-testid="hour-tip"]').text()).toBe('Céu limpo')
+      expect(icons[6].attributes('tabindex')).toBe('0')
+    })
+
+    it('without hourly codes the hours are unknown, never the daily code', () => {
+      const icons = mk(1).findAll('[data-testid="temp-icon"]')
+      expect(icons.some((i) => i.text() === '🌧️')).toBe(false)
+      expect(new Set(icons.map((i) => i.attributes('aria-label')))).toEqual(new Set(['Tempo']))
+    })
   })
 
   it('says so when the day has no hourly temperatures', () => {

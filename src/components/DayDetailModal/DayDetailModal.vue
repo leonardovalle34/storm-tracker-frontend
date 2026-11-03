@@ -3,18 +3,22 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HourlyTempChart from '@/components/HourlyTempChart/HourlyTempChart.vue'
+import WeatherIcon from '@/components/WeatherIcon/WeatherIcon.vue'
 import { useLocationStore } from '@/stores/location'
 import { useUnitsStore } from '@/stores/units'
 import { useWeatherStore } from '@/stores/weather'
 import type { DailyForecast, HourlyForecast } from '@/types/weather'
 import { formatDay } from '@/utils/date'
 import { buildDayHours } from '@/utils/dayHours'
+import { dayIconInfo } from '@/utils/conditionText'
 import { formatTemp } from '@/utils/temperature'
-import { describeWeather } from '@/utils/weatherCode'
 
 const props = defineProps<{
   daily: DailyForecast
-  hourly?: Pick<HourlyForecast, 'time' | 'temperature_2m' | 'weather_code'> | null
+  hourly?: Pick<
+    HourlyForecast,
+    'time' | 'temperature_2m' | 'weather_code' | 'is_day' | 'precipitation'
+  > | null
   /** index of the open day in `daily`; null = closed */
   index: number | null
 }>()
@@ -43,10 +47,11 @@ const day = computed(() => {
   return {
     date,
     label: formatDay(date, locale.value),
-    weather: describeWeather(props.daily.weather_code?.[i]),
+    // header: the average daytime condition, like the cards. Each hour of the chart uses its own code
+    weather: dayIconInfo(props.daily, props.hourly, i, t, locale.value),
     max: formatTemp(props.daily.temperature_2m_max[i], unit.value, 0, false),
     min: formatTemp(props.daily.temperature_2m_min[i], unit.value, 0, false),
-    hours: props.hourly ? buildDayHours(props.hourly, date, props.daily.weather_code?.[i]) : [],
+    hours: props.hourly ? buildDayHours(props.hourly, date) : [],
   }
 })
 // the first day is today: show the current temperature when the backend sent it
@@ -115,14 +120,15 @@ function onKey(e: KeyboardEvent) {
             <p data-testid="day-date" class="capitalize text-muted">{{ day.label }}</p>
           </div>
           <div class="flex flex-wrap items-center gap-3">
-            <span
-              data-testid="day-weather"
-              role="img"
-              :aria-label="t(`weather.${day.weather.key}`)"
-              :title="t(`weather.${day.weather.key}`)"
+            <WeatherIcon
+              testid="day-weather"
               class="text-4xl"
-              >{{ day.weather.icon }}</span
-            >
+              :icon="day.weather.icon"
+              :label="day.weather.label"
+              :tip="day.weather.tip"
+              :isolated="day.weather.isolated"
+              focusable
+            />
             <div class="text-right">
               <p v-if="current" data-testid="day-current" class="text-3xl font-semibold">{{ current }}</p>
               <p data-testid="day-temps" :class="current ? 'text-sm' : 'text-2xl font-semibold'">
