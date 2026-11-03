@@ -11,17 +11,24 @@ import type { DailyForecast, HourlyForecast, MarineHourly } from '@/types/weathe
 import { WARNING_DAYS, buildDayAlerts, upcomingWarnings, worstSeverity, type Severity } from '@/utils/alerts'
 import { TONE_CLASS } from '@/utils/tones'
 import { formatDay } from '@/utils/date'
-import { describeWeather } from '@/utils/weatherCode'
+import { dayIconInfo } from '@/utils/conditionText'
 import ConditionBadge from '@/components/ConditionBadge/ConditionBadge.vue'
 import DayDetailModal from '@/components/DayDetailModal/DayDetailModal.vue'
 import SunTimes from '@/components/SunTimes/SunTimes.vue'
+import WeatherIcon from '@/components/WeatherIcon/WeatherIcon.vue'
 
 const props = defineProps<{
   daily: DailyForecast
   /** for the wind alert (sustained wind and gusts) */
   hourly?: Pick<
     HourlyForecast,
-    'time' | 'wind_speed_10m' | 'wind_gusts_10m' | 'temperature_2m' | 'weather_code'
+    | 'time'
+    | 'wind_speed_10m'
+    | 'wind_gusts_10m'
+    | 'temperature_2m'
+    | 'weather_code'
+    | 'is_day'
+    | 'precipitation'
   > | null
   /** only when the location has ocean data: turns on the sea alert */
   marine?: MarineHourly | null
@@ -39,6 +46,15 @@ useSyncedScroll(scroller, () => {
 
 // day whose detail modal is open (index in daily.time); null = closed
 const openDay = ref<number | null>(null)
+// card with keyboard focus: its icon tooltip opens (the icon itself is not a tab stop inside the button)
+const focusedCard = ref<number | null>(null)
+// a focus right after a pointerdown on the card came from mouse / touch, not from the keyboard
+let pointerFocus = false
+const onCardPointerDown = () => (pointerFocus = true)
+function onCardFocus(i: number) {
+  if (!pointerFocus) focusedCard.value = i
+  pointerFocus = false
+}
 
 const dayAlerts = computed(() => buildDayAlerts(props))
 const warnings = computed(() => upcomingWarnings(dayAlerts.value))
@@ -55,7 +71,8 @@ const cards = computed(() =>
     max: formatTemp(props.daily.temperature_2m_max[i], unit.value, 0, false),
     min: formatTemp(props.daily.temperature_2m_min[i], unit.value, 0, false),
     rain: props.daily.precipitation_sum[i] ?? 0,
-    weather: describeWeather(props.daily.weather_code?.[i]),
+    // what the day mostly looks like; the alerts keep the daily code (worst event of the day)
+    weather: dayIconInfo(props.daily, props.hourly, i, t, locale.value),
     uv: props.daily.uv_index_max?.[i] ?? null,
     sunrise: props.daily.sunrise?.[i],
     sunset: props.daily.sunset?.[i],
@@ -99,16 +116,19 @@ const cards = computed(() =>
         data-testid="day-card"
         class="flex w-28 shrink-0 cursor-pointer flex-col items-center gap-1 rounded-lg border border-line bg-surface p-3 text-center hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-accent"
         @click="openDay = i"
+        @pointerdown="onCardPointerDown"
+        @focus="onCardFocus(i)"
+        @blur="focusedCard = null"
       >
         <span class="block text-sm font-medium capitalize">{{ c.label }}</span>
-        <span
-          data-testid="weather-icon"
-          role="img"
-          :aria-label="t(`weather.${c.weather.key}`)"
-          :title="t(`weather.${c.weather.key}`)"
+        <WeatherIcon
           class="text-3xl"
-          >{{ c.weather.icon }}</span
-        >
+          :icon="c.weather.icon"
+          :label="c.weather.label"
+          :tip="c.weather.tip"
+          :isolated="c.weather.isolated"
+          :active="focusedCard === i"
+        />
         <span class="block text-base font-semibold">
           {{ c.max }} <span class="font-normal text-muted">{{ c.min }}</span>
         </span>

@@ -184,6 +184,79 @@ describe('ForecastCards', () => {
       expect(icons.map((i) => i.attributes('data-category'))).toEqual(['rain', 'storm'])
     })
 
+    // daily 95 (the worst hour); daylight 6h-17h partly cloudy, thunder at 15h with 2 mm
+    const stormy = {
+      ...calm,
+      weather_code: calm.time.map((_, i) => (i % 24 === 15 ? 95 : 2)),
+      is_day: calm.time.map((_, i) => (i % 24 >= 6 && i % 24 < 18 ? 1 : 0)),
+      precipitation: calm.time.map((_, i) => (i === 15 ? 2 : 0)),
+    }
+    const mkStormy = () => mkAlerts({ weather_code: [95, 0, 0, 0], precipitation_sum: [2, 0, 0, 0] }, stormy)
+
+    it('the card icon is the average daytime condition, but the storm alert keeps the daily code', () => {
+      const card = mkStormy().findAll('[data-testid="day-card"]')[0]
+      const icon = card.get('[data-testid="weather-icon"]')
+      expect(icon.text()).toBe('⛅⚡') // partly cloudy + small bolt (isolated thunder)
+      expect(icon.attributes('data-isolated')).toBe('thunder')
+      expect(icon.attributes('aria-label')).toBe('Parcialmente nublado')
+      const storm = card.get('[data-category="storm"]')
+      expect(storm.attributes('data-severity')).toBe('moderate') // classifyStormSeverity(95), daily code
+    })
+
+    it('a storm only at night: clear icon without badge, the storm alert still shows (daily code)', () => {
+      const night = {
+        ...calm,
+        weather_code: calm.time.map((_, i) => (i === 2 ? 96 : 0)),
+        is_day: calm.time.map((_, i) => (i % 24 >= 6 && i % 24 < 18 ? 1 : 0)),
+        precipitation: calm.time.map((_, i) => (i === 2 ? 4 : 0)),
+      }
+      const card = mkAlerts({ weather_code: [96, 0, 0, 0], precipitation_sum: [4, 0, 0, 0] }, night).findAll(
+        '[data-testid="day-card"]',
+      )[0]
+      expect(card.get('[data-testid="weather-icon"]').text()).toBe('☀️')
+      expect(card.find('[data-testid="weather-badge"]').exists()).toBe(false)
+      expect(card.get('[data-category="storm"]').attributes('data-severity')).toBe('severe') // 96
+    })
+
+    it('card tooltip: condition, daytime rain summary and the note, linked by aria-describedby', () => {
+      const card = mkStormy().findAll('[data-testid="day-card"]')[0]
+      const icon = card.get('[data-testid="weather-icon"]')
+      const tip = card.get(`#${icon.attributes('aria-describedby')}`)
+      expect(tip.attributes('role')).toBe('tooltip')
+      expect(tip.findAll('span').map((l) => l.text())).toEqual([
+        'Parcialmente nublado · trovoadas isoladas (1 h, 2 mm, por volta das 15h)',
+        'Ícone pela média das condições durante o dia (sem o período noturno)',
+      ])
+    })
+
+    it('card tooltip opens on hover and on keyboard focus of the card', async () => {
+      const w = mkStormy()
+      const card = w.findAll('[data-testid="day-card"]')[0]
+      const tip = () => card.get('[data-testid="weather-icon-tip"]').attributes('data-open')
+      await card.get('[data-testid="weather-icon"]').trigger('mouseenter')
+      expect(tip()).toBe('true')
+      await card.get('[data-testid="weather-icon"]').trigger('mouseleave')
+      await card.trigger('focus')
+      expect(tip()).toBe('true')
+      await card.trigger('blur')
+      expect(tip()).toBe('false')
+      // focus from a mouse press does not pop it up
+      await card.trigger('pointerdown')
+      await card.trigger('focus')
+      expect(tip()).toBe('false')
+    })
+
+    it('the modal header shows the same icon and tooltip as the card', async () => {
+      const w = mkStormy()
+      const card = w.findAll('[data-testid="day-card"]')[0]
+      await card.trigger('click')
+      const header = w.get('[data-testid="day-weather"]')
+      expect(header.text()).toBe('⛅⚡')
+      expect(w.get(`#${header.attributes('aria-describedby')}`).text()).toContain(
+        'Parcialmente nublado · trovoadas isoladas (1 h, 2 mm, por volta das 15h)',
+      )
+    })
+
     it('shows the sea alert only when the location has ocean data', () => {
       const marine = makeMarine(true, dates).hourly
       marine.wave_height = marine.wave_height.map(() => 3)

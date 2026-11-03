@@ -20,13 +20,16 @@ export interface DailyForecast {
 export interface HourlyForecast {
   time: string[]
   temperature_2m?: number[]
-  precipitation?: number[]
+  /** mm in the PRECEDING hour (Open-Meteo); > 0 marks an hour with rain for the daily icon */
+  precipitation?: (number | null)[]
   wind_speed_10m: number[]
   wind_direction_10m: number[]
   /** knots, same unit and scale as wind_speed_10m; optional until every backend sends it */
   wind_gusts_10m?: (number | null)[]
-  /** not sent by the backend yet; used per hour when present, else the daily code applies */
-  weather_code?: number[]
+  /** WMO code of each hour (not the day's worst event); optional until every backend sends it */
+  weather_code?: (number | null)[]
+  /** 1 = daylight, 0 = night; picks the night icon variant. Optional like weather_code */
+  is_day?: (number | null)[]
 }
 
 /** Conditions right now. Optional: backends that predate it simply omit it. */

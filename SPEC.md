@@ -115,7 +115,7 @@ Base URL: environment variable **`VITE_API_BASE_URL`** (default `http://localhos
 **Forecast fields used** (Open-Meteo, requested with `wind_speed_unit=kn`, `timezone=auto`, 16 days, so wind is in **knots**, temperature in **°C**, precipitation in **mm**):
 
 - `daily`: `time`, `temperature_2m_max`, `temperature_2m_min`, `precipitation_sum`, `weather_code`, `uv_index_max`, `sunrise`, `sunset`, and `apparent_temperature_max` (optional: without it there is simply no heat alert; the backend does not request it yet, see findings)
-- `hourly`: `time`, `temperature_2m` (optional: the day detail chart shows "no hourly data" without it), `weather_code` (optional, per hour), `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m` (knots, optional: without it the gust row is simply omitted), `precipitation` (rain of the previous 24 h for water visibility). The hourly `weather_code` is **not** sent by the backend today; the daily code is repeated on every hour of the day chart.
+- `hourly`: `time`, `temperature_2m` (optional: the day detail chart shows "no hourly data" without it), `weather_code` and `is_day` (per hour; optional, see [Daily icon](#daily-icon-and-weather-tooltips)), `wind_speed_10m`, `wind_direction_10m`, `wind_gusts_10m` (knots, optional: without it the gust row is simply omitted), `precipitation` (mm of the **preceding** hour; used for the rain of the previous 24 h in water visibility and for the hours with rain of the daily icon).
 - `current` (optional): `temperature_2m`, `weather_code`, `wind_speed_10m` (knots, same request). If absent, the "Now" row is simply omitted.
 
 **Marine fields used** (`hourly`): `time`, `wave_height`, `swell_wave_height`, `swell_wave_direction`, `swell_wave_period`, `sea_level_height_msl`, `sea_surface_temperature`.
@@ -149,12 +149,12 @@ The page (`App.vue`) is, top to bottom: header → location picker (map) → sta
 
 ### 16-day forecast (`ForecastCards`)
 
-- One card per day in a horizontally scrolling row: weekday + date, weather icon (from the daily `weather_code`), max/min temperature (chosen unit), precipitation, **sunrise / sunset** of that day, **UV badge** (fixed-size chip with the index, colored by WHO level; the level name is in the tooltip) and the **alert row**.
+- One card per day in a horizontally scrolling row: weekday + date, weather icon (the **average daytime condition**, night excluded, with a small drop / bolt for isolated rain / thunder, and an explanatory tooltip; see [Daily icon](#daily-icon-and-weather-tooltips)), max/min temperature (chosen unit), precipitation, **sunrise / sunset** of that day, **UV badge** (fixed-size chip with the index, colored by WHO level; the level name is in the tooltip) and the **alert row**.
 - The **last requested day** usually comes back with null data (the model reaches ~15 days); trailing days without data are dropped instead of rendered as zeros. Gaps in the middle are kept.
 - The **alert row** appears only on days that have at least one active alert; quiet days show nothing. Icons are colored yellow / orange / red and each has a tooltip (see [alerts](#alerts)). The **sea** alert appears only when the location has ocean data.
 - The **banner** above the cards appears when any category is **high or severe within the first 3 days**. It lists each category once, at its worst level, with the dates on which it is high or severe, plus a "model estimate, not an official alert" note. Its color is orange (worst = high) or red (worst = severe).
-- **Day detail modal** (`DayDetailModal`, native `<dialog>` like the map modal; closes with the button, backdrop click or Esc). Every card is a `<button>` that opens it on that day. Header: place name, date, the day's weather icon and, on the **first day (today)**, the current temperature (`forecast.current`, if sent) with max/min underneath; other days show max/min. The **◀ ▶** arrows (and ArrowLeft/ArrowRight) move to the previous/next day without closing; they are disabled on the first/last day. The content is only rendered while open.
-- **Hourly temperature chart** (`HourlyTempChart`, data from `buildDayHours` in `utils/dayHours.ts`): **all 24 hours** of the day (not the 3-hour columns). Same technique as the tide chart (`smoothPath`, Catmull-Rom → Bézier, gradient fill, unique gradient id) in the **warm** token (`--warm`, orange/amber) instead of ocean teal. Rows: a small weather icon above each hour (the hour's `weather_code` when the backend sends it, otherwise the day's icon repeated), the curve with a dot per hour, **the temperature of every hour** below the curve (unlike the tide chart, which only labels extrema) and the hour axis `00h`–`23h`. Values follow the temperature unit (°C/°F; the chart scale is unit-independent). A missing hour shows a dash and no dot; with fewer than 2 valid hours the modal says there is no hourly data. The chart scrolls horizontally on narrow screens. On today the axis is still 00h–23h (the backend gives no local "now" hour, so a from-now axis is not implemented).
+- **Day detail modal** (`DayDetailModal`, native `<dialog>` like the map modal; closes with the button, backdrop click or Esc). Every card is a `<button>` that opens it on that day. Header: place name, date, the day's weather icon (the same icon and tooltip as the card) and, on the **first day (today)**, the current temperature (`forecast.current`, if sent) with max/min underneath; other days show max/min. The **◀ ▶** arrows (and ArrowLeft/ArrowRight) move to the previous/next day without closing; they are disabled on the first/last day. The content is only rendered while open.
+- **Hourly temperature chart** (`HourlyTempChart`, data from `buildDayHours` in `utils/dayHours.ts`): **all 24 hours** of the day (not the 3-hour columns). Same technique as the tide chart (`smoothPath`, Catmull-Rom → Bézier, gradient fill, unique gradient id) in the **warm** token (`--warm`, orange/amber) instead of ocean teal. Rows: a small weather icon above each hour (the hour's own `weather_code`, night variant when `is_day = 0`; a missing code shows the neutral icon, **never** the daily code; each icon has a tooltip with the WMO name and the hour's precipitation), the curve with a dot per hour, **the temperature of every hour** below the curve (unlike the tide chart, which only labels extrema) and the hour axis `00h`–`23h`. Values follow the temperature unit (°C/°F; the chart scale is unit-independent). A missing hour shows a dash and no dot; with fewer than 2 valid hours the modal says there is no hourly data. The chart scrolls horizontally on narrow screens. On today the axis is still 00h–23h (the backend gives no local "now" hour, so a from-now axis is not implemented).
 - A **scroll-sync toggle** in this header links the three horizontal scrollers (see [Scroll sync](#scroll-sync)).
 
 #### Sunrise and sunset
@@ -254,6 +254,42 @@ Bands: `≥ 75` great, `≥ 55` good, `≥ 35` fair, otherwise poor.
 
 `utils/waterClarity.ts` (internally still named _clarity_; the UI label is "Water visibility"). An **estimate** — no API reports underwater visibility. Start at 100 and subtract: waves above 0.3 m × 35 per meter (max 60); wind above 8 kt × 2.5 per knot; rain in the previous 24 h × 2 per mm (max 40); swell period under 6 s −10. Clamped to 0–100. Daily value = average over daylight hours. Labels: `≥ 80` excellent, `≥ 60` good, `≥ 40` fair, otherwise low.
 
+### Daily icon and weather tooltips
+
+`utils/dailyCondition.ts` (pure). The daily `weather_code` is the **most severe** hour of the day (night included), so a single thundery hour made almost every day look stormy or rainy. The icon of the cards and of the modal header uses `dailyCondition` instead: the **average of the daytime conditions**. **Alerts still use the daily code** (an alert must reflect the worst event of the day, night included).
+
+Input, per day: the hourly `weather_code`, `is_day`, `precipitation`, `time` and the daily `precipitation_sum`. Output: `{ code, isolated: 'none' | 'rain' | 'thunder', averageScore, rainHours, rainWindow?: { start, end }, precipitationSum }`. Constants at the top of the file: `LIMIT_MM = 5`, `LIMIT_HOURS = 3` and the score table `SCORE_TABLE`.
+
+| Score | Condition             | WMO codes                   |
+| ----- | --------------------- | --------------------------- |
+| 0     | clear                 | 0, 1                        |
+| 1     | partly cloudy         | 2                           |
+| 2     | overcast / fog        | 3, 45, 48                   |
+| 3     | drizzle               | 51–57                       |
+| 4     | rain / showers / snow | 61–67, 71–77, 80–82, 85, 86 |
+| 5     | thunderstorm          | 95, 96, 99                  |
+
+Codes outside the table are ignored.
+
+1. Only daylight hours (`is_day = 1`) count, for the average **and** for the rain; if the day has no daylight hour in the data, all hours count.
+2. `averageScore` = mean score of those hours.
+3. Among the scores that **occur** in those hours, the one closest to `averageScore` wins; ties go to the more severe one. A category that did not occur is never returned (8 h clear + 4 h overcast = 0.67 → clear, not partly cloudy).
+4. An **hour with rain** is a daylight hour with `precipitation > 0` (a drizzle code with 0 mm is not rain; night rain is ignored).
+5. **Relevant rain** (wins over the average): `>= LIMIT_MM` mm over the daylight hours, or `>= LIMIT_HOURS` daylight hours with rain → the most severe precipitation score (3–5) present in the daylight hours. If none is present, step 3 stands.
+6. **Isolated rain:** a dry result (score < 3), 1 to `LIMIT_HOURS - 1` daylight hours with rain and `< LIMIT_MM` → `isolated = 'rain'`, or `'thunder'` if one of those hours has a 95–99 code. Shown as a small 💧 / ⚡ badge on the icon (`WeatherIcon`).
+7. Within the chosen score, its most frequent daylight code (ties: the higher code).
+8. No hourly codes for the day → the daily `weather_code`, `isolated = 'none'`, `averageScore` = that code's score, `precipitationSum` = daily `precipitation_sum`. With hourly codes but no hourly `precipitation`, the daily `precipitation_sum` is used for step 5.
+
+`precipitationSum` is the daylight total (what the tooltip summarizes). `rainWindow` is cut from the `hourly.time` strings (local time of the point, no `Date`). Because Open-Meteo's hourly precipitation is the sum of the **preceding** hour, the window starts one hour before the first rainy timestamp (rain at `15:00` = 14h–15h).
+
+The WMO code `1` (mainly clear) scores as _clear_ but keeps the app-wide ⛅ icon and "partly cloudy" name.
+
+**Tooltips** (`WeatherIcon` + `composables/useTooltip.ts`): open on hover, on keyboard focus and on tap (a tap on a card icon shows the tooltip instead of opening the modal); close on leave/blur, Esc, a tap elsewhere or scroll. The bubble is `position: fixed` so the horizontal scrollers do not clip it, and it is linked to the icon with `aria-describedby`. The card icon is not a tab stop (it sits inside the card button): keyboard focus on the card opens it.
+
+- **Day (card and modal header):** condition name + rain summary of the daylight hours, then "Icon shows the average daytime conditions (night excluded)". pt examples: `Parcialmente nublado` · `Parcialmente nublado · chuva isolada (1 h, 0,4 mm, por volta das 15h)` · `Nublado · trovoadas isoladas (2 h, 3 mm, entre 14h e 16h)` · `Chuva · 8 mm em 5 h`. Texts in `utils/conditionText.ts`.
+- **Hour (day chart):** the WMO name of the hour (`wmo.c<code>`, every code Open-Meteo sends, in the 5 languages) + its precipitation, e.g. `Pancadas de chuva fracas · 0,6 mm`, `Céu limpo`. Each hour icon is focusable and has its own hidden description; the visible bubble follows the active hour.
+- Numbers use the locale format (`0,4` in pt); hours use `forecast.tip.hour` (`15h`, `15:00`, `15 Uhr`).
+
 ### Alerts
 
 `utils/alerts.ts`. Severity is `none | moderate | high | severe`; the UI shows yellow, orange, red.
@@ -315,7 +351,7 @@ Notes: places are considered the same when their coordinates match to 4 decimals
 - **Semantics:** the search is a `combobox` with `listbox`/`option`; toggles are `role="switch"` or `aria-pressed` buttons; icons carry `aria-label`s; tooltips are linked with `aria-describedby`; the modal is a native `<dialog>`; the map and the collapsed/expanded regions use `inert` so hidden content is not focusable.
 - **Not color-only:** wind cells show their number, alerts show an icon plus text in the tooltip/banner, the theme switch shows the theme name.
 - **Motion:** transitions use `motion-reduce:transition-none` where present.
-- **Tooltips on alert icons and UV chips use the native `title` attribute**, which does not appear on keyboard focus (the full text is also in `aria-label`).
+- **Tooltips on alert icons and UV chips use the native `title` attribute**, which does not appear on keyboard focus or on touch (the full text is also in `aria-label`). Weather icons of the cards, the modal header and the day chart use the accessible tooltip described in [Daily icon](#daily-icon-and-weather-tooltips); the current-conditions icon still uses `title`.
 
 ## Known limitations
 
@@ -323,7 +359,7 @@ Notes: places are considered the same when their coordinates match to 4 decimals
 - **Ocean-model reliability drops with distance.** Wave-model data thins out after roughly the first 7–10 days. The code does not hard-code a day: it flags every day **from the first one with missing marine data** as a "long-term estimate" (the cut varies per location).
 - **No reverse geocoding.** A place chosen by map click or by browser geolocation is named by its coordinates (`"-23.9600, -46.3300"`); the backend has no reverse-geocode endpoint. The same name goes into favorites and history.
 - **The wind alert takes the worse of sustained wind and gusts** (e.g. 14 kt sustained / 28 kt gust raises _moderate_ from the gust). The **sea** alert still uses only the sustained wind. The backend does not request `snowfall`, so a heavy-snow day is classified from the daily total only.
-- **One weather code per day.** The daily code is the worst hour of the day, and alerts and the day icon depend on it. On a frozen day with one thundery hour the _icon_ still shows a thunderstorm even though the alert correctly reads snow.
+- **Alerts use one weather code per day.** The daily code is the worst hour of the day; the day _icon_ no longer depends on it (see [Daily icon](#daily-icon-and-weather-tooltips)), but alerts do, on purpose.
 - **Alert and activity thresholds are hand-set, not taken from an official standard** (see findings). Rain and snow thresholds in particular are estimates.
 - **The 3-day banner does not look further ahead.** Severe conditions on day 6 appear on that day's card but not in the banner.
 - **Units:** only temperature and wind are switchable. Alert thresholds are defined in km/h and shown in the chosen wind unit; waves and tides are always meters; precipitation always mm.
@@ -353,7 +389,7 @@ Points where the code differs from what was discussed or planned, or looks unfin
 5. **Inconsistent localStorage key naming.** Older keys use `st-*` (`st-theme`, `st-locale`, `st-scroll-sync`, `st-geo-asked`); newer ones use `storm-track:*`. Harmless, but worth unifying (with a migration) if desired.
 6. **Internal names vs UI names.** "Water visibility" is still `clarity` in the code (`waterClarity.ts`, `ConditionBadge kind="clarity"`, `clarity-row`, i18n key `clarity`). Only the visible label was renamed.
 7. **Stray code in the backend geocode route.** `routes/weather.py` keeps a string-literal leftover of an earlier Open-Meteo geocode call inside `geocode()`, and `schemas/weather.py` has a `GeocodeResponse` model that no route uses. The route returns raw Nominatim JSON, which is why the frontend accepts two shapes.
-8. **`temperature_2m` hourly is requested but unused** by the UI, and per-hour `weather_code` is typed as "not sent by the backend yet" but the activity planner is already written to use it when it appears.
+8. **The activity planner still falls back to the daily code** when an hour has no `weather_code` (the day chart and the day icon no longer do).
 9. **Responsiveness and full-page AA have not been verified** beyond the token tests and class usage (see the section above).
 10. **Heat alert depends on a backend change that is not in the repo yet.** The frontend reads `daily.apparent_temperature_max`, but `storm-tracker-backend/app/services/open_meteo.py` does not request it in the `daily` list, so the heat alert never appears until it is added.
 11. **Roadmap items with no code:** push notifications and "Phase 2 — history with cache" have no implementation or stubs.

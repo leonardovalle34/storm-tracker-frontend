@@ -132,11 +132,11 @@ describe('HourlyTempChart', () => {
     expect(cy.every((y) => Number.isFinite(y))).toBe(true)
   })
 
-  it('is responsive and accessible: scales with the container, role img with a translated label', () => {
+  it('is responsive and accessible: scales with the container, a labelled group (its hour icons take focus)', () => {
     const svg = mk().get('svg')
     expect(svg.attributes('width')).toBeUndefined()
     expect(svg.classes()).toContain('w-full')
-    expect(svg.attributes('role')).toBe('img')
+    expect(svg.attributes('role')).toBe('group')
     expect(svg.attributes('aria-label')).toBe('Curva de temperatura por hora')
     setLocale('en')
     expect(mk().get('svg').attributes('aria-label')).toBe('Hourly temperature curve')
